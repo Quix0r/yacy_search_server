@@ -34,10 +34,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.Set;
-
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2Utils;
-
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.document.id.MultiProtocolURL;
 import net.yacy.document.AbstractParser;
@@ -46,13 +42,15 @@ import net.yacy.document.Parser;
 import net.yacy.document.TextParser;
 import net.yacy.document.VocabularyScraper;
 import net.yacy.kelondro.util.FileUtils;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2Utils;
 
 /**
  * Parses a bz2 archive.
  * Unzips and parses the content and adds it to the created main document
  */
 public class bzipParser extends AbstractParser implements Parser {
-	
+
     public bzipParser() {
         super("Bzip 2 UNIX Compressed File Parser");
         this.SUPPORTED_EXTENSIONS.add("bz2");
@@ -70,8 +68,8 @@ public class bzipParser extends AbstractParser implements Parser {
             final DigestURL location,
             final String mimeType,
             final String charset,
-            Set<String> ignore_class_name,
-            final VocabularyScraper scraper, 
+            final Set<String> ignore_class_name,
+            final VocabularyScraper scraper,
             final int timezoneOffset,
             final InputStream source)
             throws Parser.Failure, InterruptedException {
@@ -137,18 +135,18 @@ public class bzipParser extends AbstractParser implements Parser {
         }
         return maindoc == null ? null : new Document[]{maindoc};
     }
-    
+
     @Override
     public boolean isParseWithLimitsSupported() {
     	return true;
     }
-    
+
     /**
      * Create the main resulting parsed document for a bzip archive
      * @param location the parsed resource URL
      * @param mimeType the media type of the resource
      * @param charset the charset name if known
-     * @param an instance of bzipParser that is registered as the parser origin of the document
+     * @param parser instance of bzipParser that is registered as the parser origin of the document
      * @return a Document instance
      */
 	public static Document createMainDocument(final DigestURL location, final String mimeType, final String charset, final bzipParser parser) {
@@ -174,10 +172,10 @@ public class bzipParser extends AbstractParser implements Parser {
                 new Date());
 		return maindoc;
 	}
-	
+
 	/**
 	 * Parse content in an open stream uncompressing on the fly a bzipped resource.
-	 * @param location the URL of the bzipped resource 
+	 * @param location the URL of the bzipped resource
 	 * @param charset the charset name if known
 	 * @param timezoneOffset the local time zone offset
 	 * @param compressedInStream an open stream uncompressing on the fly the compressed content
@@ -202,15 +200,14 @@ public class bzipParser extends AbstractParser implements Parser {
     		final String locationPath = location.getPath();
         	final String contentPath = locationPath.substring(0, locationPath.length() - compressedFileName.length()) + contentfilename;
 			final DigestURL contentLocation = new DigestURL(location.getProtocol(), location.getHost(), location.getPort(), contentPath);
-			
+
 	        /* Rely on the supporting parsers to respect the maxLinks and maxBytes limits on compressed content */
 	        return TextParser.parseWithLimits(contentLocation, mime, charset, timezoneOffset, depth, -1, compressedInStream, maxLinks, maxBytes);
 		} catch (MalformedURLException e) {
 			throw new Parser.Failure("Unexpected error while parsing gzip file. " + e.getMessage(), location);
 		}
 	}
-		
-    
+
     @Override
     public Document[] parseWithLimits(final DigestURL location, final String mimeType, final String charset, final VocabularyScraper scraper,
     		final int timezoneOffset, final InputStream source, final int maxLinks, final long maxBytes)
@@ -221,10 +218,10 @@ public class bzipParser extends AbstractParser implements Parser {
             // BZip2CompressorInputStream checks filecontent (magic start-bytes "BZh") and throws ioexception if no match
             zippedContent = new BZip2CompressorInputStream(source);
 
-        } catch(Exception e) {
+        } catch(final IOException e) {
         	throw new Parser.Failure("Unexpected error while parsing bzip file. " + e.getMessage(), location);
-        } 
-        
+        }
+
         try {
              // create maindoc for this bzip container, register with supplied url & mime
             maindoc = createMainDocument(location, mimeType, charset, this);
@@ -236,7 +233,7 @@ public class bzipParser extends AbstractParser implements Parser {
             		maindoc.setPartiallyParsed(true);
             	}
             }
-        } catch (final Exception e) {
+        } catch (final IOException | Failure e) {
             if (e instanceof Parser.Failure) {
             	throw (Parser.Failure) e;
             }

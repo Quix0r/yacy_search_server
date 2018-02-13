@@ -1,7 +1,5 @@
 package net.yacy.document.parser;
 
-import static net.yacy.document.parser.htmlParser.parseToScraper;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,9 +12,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-
-import org.junit.Test;
-
 import junit.framework.TestCase;
 import net.yacy.cora.document.id.AnchorURL;
 import net.yacy.document.Document;
@@ -24,6 +19,8 @@ import net.yacy.document.Parser;
 import net.yacy.document.VocabularyScraper;
 import net.yacy.document.parser.html.ContentScraper;
 import net.yacy.document.parser.html.ImageEntry;
+import static net.yacy.document.parser.htmlParser.parseToScraper;
+import org.junit.Test;
 
 public class htmlParserTest extends TestCase {
 
@@ -43,27 +40,27 @@ public class htmlParserTest extends TestCase {
 	       new String[]{"gb_2312-80","gb2312"},           // was: x-EUC-CN
 	       new String[]{"UTF-8;", StandardCharsets.UTF_8.name()}
 		};
-		
+
 		for (int i=0; i < testStrings.length; i++) {
 			// desired conversion result
 			String shouldBe = testStrings[i][1];
 			shouldBe = shouldBe!=null ? shouldBe.toLowerCase(Locale.ROOT) : null;
-			
+
 			// conversion result
 			String charset = htmlParser.patchCharsetEncoding(testStrings[i][0]);
-			
+
 			// test if equal
 			assertEquals(shouldBe, charset!=null ? charset.toLowerCase(Locale.ROOT) : null);
 			System.out.println("testGetRealCharsetEncoding: " + (testStrings[i][0]!=null?testStrings[i][0]:"null") + " -> " + (charset!=null?charset:"null") + " | Supported: " + (charset!=null?Charset.isSupported(charset):false));
-			
+
 		}
-		
+
 	}
 
     /**
      * Test of parse method, of class htmlParser.
      * - test getCharset
-     * @throws IOException 
+     * @throws IOException
      */
     @Test
     public void testParse() throws Parser.Failure, InterruptedException, IOException {
@@ -88,7 +85,7 @@ public class htmlParserTest extends TestCase {
             FileInputStream inStream = null;
             try {
             	inStream = new FileInputStream(file);
-            	
+
                 final Document[] docs = p.parse(url, mimetype, null, new VocabularyScraper(), 0, inStream);
 
                 Document doc = docs[0];
@@ -102,11 +99,11 @@ public class htmlParserTest extends TestCase {
             }
         }
     }
-    
+
 	/**
 	 * Test the htmlParser.parse() method, with no charset information, neither
 	 * provided by HTTP header nor by meta tags or attributes.
-	 * 
+	 *
 	 * @throws Exception
 	 *             when an unexpected error occurred
 	 */
@@ -139,10 +136,10 @@ public class htmlParserTest extends TestCase {
 			}
 		}
 	}
-	
+
 	/**
 	 * Test the htmlParser.parse() method, when filtering out div elements on their CSS class.
-	 * 
+	 *
 	 * @throws Exception
 	 *             when an unexpected error occurred
 	 */
@@ -163,7 +160,7 @@ public class htmlParserTest extends TestCase {
 		testHtml.append("<p class=\"optional\">A paragraph</p>");
 
 		testHtml.append("<div class=\"optional-text\">Text-only optional block</div>");
-		
+
 		testHtml.append("<div class=\"optional desc\">");
 		testHtml.append("<div class=\"optional child\">");
 		testHtml.append("<div class=\"child\">");
@@ -171,7 +168,7 @@ public class htmlParserTest extends TestCase {
 		testHtml.append("</div></div></div>");
 
 		testHtml.append("<div class=\"bottom optional media\" itemscope itemtype=\"https://schema.org/LocalBusiness\"><img itemprop=\"logo\" src=\"http://localhost/image.png\" alt=\"Our Company\"></div>");
-		
+
 		final htmlParser parser = new htmlParser();
 
 		/* No CSS class filter */
@@ -180,7 +177,7 @@ public class htmlParserTest extends TestCase {
 			final Document[] docs = parser.parse(url, mimetype, null, new VocabularyScraper(), 0, sourceStream);
 			final Document doc = docs[0];
 			final String parsedDext = doc.getTextString();
-			
+
 			/* Check everything has been parsed */
 			assertEquals(2, doc.getAnchors().size());
 			assertEquals(1, doc.getImages().size());
@@ -192,7 +189,7 @@ public class htmlParserTest extends TestCase {
 			assertTrue(parsedDext.contains("Text-only"));
 			assertTrue(parsedDext.contains("depth"));
 		}
-		
+
 		/* Filter on CSS classes with no matching elements */
 		try (InputStream sourceStream = new ByteArrayInputStream(
 				testHtml.toString().getBytes(StandardCharsets.UTF_8));) {
@@ -203,7 +200,7 @@ public class htmlParserTest extends TestCase {
 			final Document[] docs = parser.parse(url, mimetype, null, new VocabularyScraper(), 0, sourceStream);
 			final Document doc = docs[0];
 			final String parsedDext = doc.getTextString();
-			
+
 			/* Check everything has been parsed */
 			assertEquals(2, doc.getAnchors().size());
 			assertEquals(1, doc.getImages().size());
@@ -215,7 +212,7 @@ public class htmlParserTest extends TestCase {
 			assertTrue(parsedDext.contains("Text-only"));
 			assertTrue(parsedDext.contains("depth"));
 		}
-		
+
 		/* Filter on CSS class with matching elements */
 		try (InputStream sourceStream = new ByteArrayInputStream(
 				testHtml.toString().getBytes(StandardCharsets.UTF_8));) {
@@ -224,7 +221,7 @@ public class htmlParserTest extends TestCase {
 			final Document[] docs = parser.parse(url, mimetype, null, ignore, new VocabularyScraper(), 0, sourceStream);
 			final Document doc = docs[0];
 			final String parsedDext = doc.getTextString();
-			
+
 			/* Check matching blocks have been ignored */
 			assertEquals(1, doc.getAnchors().size());
 			assertEquals("http://localhost/top.html", doc.getAnchors().iterator().next().toString());
@@ -233,14 +230,14 @@ public class htmlParserTest extends TestCase {
 			assertFalse(parsedDext.contains("Some"));
 			assertFalse(parsedDext.contains("from"));
 			assertFalse(parsedDext.contains("depth"));
-			
+
 			/* Check non-matching blocks have been normally parsed */
 			assertTrue(parsedDext.contains("Top"));
 			assertTrue(parsedDext.contains("Text-only"));
 			assertTrue(parsedDext.contains("paragraph"));
 		}
 	}
-    
+
     /**
      * Test the htmlParser.parseWithLimits() method with test content within bounds.
      * @throws Exception when an unexpected error occurred
@@ -265,7 +262,7 @@ public class htmlParserTest extends TestCase {
             final AnchorURL url = new AnchorURL("http://localhost/" + fileName);
 
             try (final FileInputStream inStream = new FileInputStream(file);) {
-            	
+
                 final Document[] docs = parser.parseWithLimits(url, mimetype, null, new VocabularyScraper(), 0, inStream, 1000, 10000);
                 final Document doc = docs[0];
                 assertNotNull("Parser result must not be null for file " + fileName, docs);
@@ -275,15 +272,15 @@ public class htmlParserTest extends TestCase {
 						parsedText.contains("Maßkrügen"));
 				assertEquals("Test anchor must have been parsed for file " + fileName, 1, doc.getAnchors().size());
 				assertFalse("Parsed document should not be marked as partially parsed for file " + fileName, doc.isPartiallyParsed());
-                
+
             }
         }
     }
-    
+
 	/**
 	 * Test the htmlParser.parseWithLimits() method, with various maxLinks values
 	 * ranging from zero to the exact anchors number contained in the test content.
-	 * 
+	 *
 	 * @throws Exception
 	 *             when an unexpected error occurred
 	 */
@@ -312,12 +309,12 @@ public class htmlParserTest extends TestCase {
 			}
 		}
 	}
-    
+
 	/**
 	 * Test the htmlParser.parseWithLimits() method, with various maxLinks values
 	 * ranging from zero the exact RSS feed links number contained in the test
 	 * content.
-	 * 
+	 *
 	 * @throws Exception
 	 *             when an unexpected error occurred
 	 */
@@ -351,7 +348,7 @@ public class htmlParserTest extends TestCase {
 			}
 		}
     }
-    
+
     /**
      * Test of parseToScraper method, of class htmlParser.
      */
@@ -385,11 +382,11 @@ public class htmlParserTest extends TestCase {
         ImageEntry img = scraper.getImages().get(1);
         assertEquals(550,img.width());
     }
-    
+
     /**
-     * Test parser resistance against nested anchors pattern 
-     * (<a> tag embedding other <a> tags : invalid HTML, but occasionally encountered in some real-world Internet resources. 
-     * See case reported at http://forum.yacy-websuche.de/viewtopic.php?f=23&t=6005). 
+     * Test parser resistance against nested anchors pattern
+     * (<a> tag embedding other <a> tags : invalid HTML, but occasionally encountered in some real-world Internet resources.
+     * See case reported at http://forum.yacy-websuche.de/viewtopic.php?f=23&t=6005).
      * The parser must be able to terminate in a finite time.
      * @throws IOException when an unexpected error occurred
      */
@@ -398,7 +395,7 @@ public class htmlParserTest extends TestCase {
         final AnchorURL url = new AnchorURL("http://localhost/");
         final String charset = StandardCharsets.UTF_8.name();
         final StringBuilder testHtml = new StringBuilder("<!DOCTYPE html><html><body><p>");
-        /* With prior recursive processing implementation and an average 2017 desktop computer, 
+        /* With prior recursive processing implementation and an average 2017 desktop computer,
          * computing time started to be problematic over a nesting depth of 21 */
         final int nestingDepth = 30;
         for (int count = 0; count < nestingDepth; count++) {
@@ -409,7 +406,7 @@ public class htmlParserTest extends TestCase {
         	testHtml.append("</a>");
         }
         testHtml.append("</p></body></html>");
-        
+
         ContentScraper scraper = parseToScraper(url, charset, new HashSet<String>(), new VocabularyScraper(), 0, testHtml.toString(), Integer.MAX_VALUE, Integer.MAX_VALUE);
         assertEquals(nestingDepth, scraper.getAnchors().size());
         assertEquals(1, scraper.getImages().size());

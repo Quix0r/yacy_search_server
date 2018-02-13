@@ -33,10 +33,6 @@ import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
-
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-
 import net.yacy.cora.document.encoding.UTF8;
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.document.id.MultiProtocolURL;
@@ -46,6 +42,8 @@ import net.yacy.document.Parser;
 import net.yacy.document.TextParser;
 import net.yacy.document.VocabularyScraper;
 import net.yacy.kelondro.util.FileUtils;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
 // this is a new implementation of this parser idiom using multiple documents as result set
 /**
@@ -71,7 +69,7 @@ public class tarParser extends AbstractParser implements Parser {
             final String mimeType,
             final String charset,
             final Set<String> ignore_class_name,
-            final VocabularyScraper scraper, 
+            final VocabularyScraper scraper,
             final int timezoneOffset,
             InputStream source) throws Parser.Failure, InterruptedException {
 
@@ -88,7 +86,7 @@ public class tarParser extends AbstractParser implements Parser {
         }
         TarArchiveEntry entry;
         final TarArchiveInputStream tis = new TarArchiveInputStream(source);
-        
+
         // create maindoc for this tar container
         final Document maindoc = createMainDocument(location, mimeType, charset, this);
         // loop through the elements in the tar file and parse every single file inside
@@ -105,7 +103,7 @@ public class tarParser extends AbstractParser implements Parser {
                     tmp = FileUtils.createTempFile(this.getClass(), name);
                     FileUtils.copy(tis, tmp, entry.getSize());
 					/*
-					 * Create an appropriate sub location to prevent unwanted fallback to the tarparser on resources included in the archive. 
+					 * Create an appropriate sub location to prevent unwanted fallback to the tarparser on resources included in the archive.
 					 * We use the tar file name as the parent sub path. Example : http://host/archive.tar/name.
 					 * Indeed if we create a sub location with a '#' separator such as http://host/archive.tar#name, the
 					 * extension of the URL is still ".tar", thus incorrectly making the tar parser
@@ -120,7 +118,9 @@ public class tarParser extends AbstractParser implements Parser {
                 } catch (final Parser.Failure e) {
                     AbstractParser.log.warn("tar parser entry " + name + ": " + e.getMessage());
                 } finally {
-                    if (tmp != null) FileUtils.deletedelete(tmp);
+                    if (tmp != null) {
+                        FileUtils.deletedelete(tmp);
+                    }
                 }
             } catch (final IOException e) {
                 AbstractParser.log.warn("tar parser:" + e.getMessage());
@@ -140,7 +140,7 @@ public class tarParser extends AbstractParser implements Parser {
 			final VocabularyScraper scraper, final int timezoneOffset, final InputStream source, final int maxLinks,
 			final long maxBytes) throws Failure, InterruptedException, UnsupportedOperationException {
 
-		final DigestURL parentTarURL = createParentTarURL(location);
+		final DigestURL parentTarURL = this.createParentTarURL(location);
 
 		final TarArchiveInputStream tis = new TarArchiveInputStream(source);
 
@@ -227,7 +227,7 @@ public class tarParser extends AbstractParser implements Parser {
 
 	/**
 	 * Generate a parent URL to use for generating sub URLs on tar archive entries.
-	 * 
+	 *
 	 * @param tarURL
 	 *            the URL of the tar archive
 	 * @return an URL ending with a "/" suitable as a base URL for archive entries
@@ -249,7 +249,7 @@ public class tarParser extends AbstractParser implements Parser {
 
 	/**
 	 * Create the main resulting parsed document for a tar container
-	 * 
+	 *
 	 * @param location
 	 *            the parsed resource URL
 	 * @param mimeType

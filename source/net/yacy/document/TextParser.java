@@ -33,9 +33,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.commons.io.input.CloseShieldInputStream;
-
 import net.yacy.cora.document.encoding.UTF8;
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.document.id.MultiProtocolURL;
@@ -51,6 +48,9 @@ import net.yacy.document.parser.genericParser;
 import net.yacy.document.parser.gzipParser;
 import net.yacy.document.parser.gzipParser.GZIPOpeningStreamException;
 import net.yacy.document.parser.htmlParser;
+import net.yacy.document.parser.images.genericImageParser;
+import net.yacy.document.parser.images.metadataImageParser;
+import net.yacy.document.parser.images.svgParser;
 import net.yacy.document.parser.linkScraperParser;
 import net.yacy.document.parser.mmParser;
 import net.yacy.document.parser.odtParser;
@@ -68,21 +68,19 @@ import net.yacy.document.parser.vcfParser;
 import net.yacy.document.parser.vsdParser;
 import net.yacy.document.parser.xlsParser;
 import net.yacy.document.parser.zipParser;
-import net.yacy.document.parser.images.genericImageParser;
-import net.yacy.document.parser.images.metadataImageParser;
-import net.yacy.document.parser.images.svgParser;
 import net.yacy.kelondro.util.FileUtils;
 import net.yacy.kelondro.util.MemoryControl;
+import org.apache.commons.io.input.CloseShieldInputStream;
 
 public final class TextParser {
 
     private static final Object v = new Object();
 
     private static final Parser genericIdiom = new genericParser();
-    
+
     /** A generic XML parser instance */
     private static final Parser genericXMLIdiom = new GenericXMLParser();
-    
+
     //use LinkedHashSet for parser collection to use (init) order to prefered parser for same ext or mime
     private static final Map<String, LinkedHashSet<Parser>> mime2parser = new ConcurrentHashMap<String, LinkedHashSet<Parser>>();
     private static final ConcurrentHashMap<String, LinkedHashSet<Parser>> ext2parser = new ConcurrentHashMap<String, LinkedHashSet<Parser>>();
@@ -133,7 +131,7 @@ public final class TextParser {
         for (Set<Parser> pl: mime2parser.values()) c.addAll(pl);
         return c;
     }
-    
+
     /**
      * @return the set of all supported mime types
      */
@@ -158,11 +156,15 @@ public final class TextParser {
             AbstractParser.log.info("Parser for mime type '" + mimeType + "': " + parser.getName());
         }
 
-        if (prototypeMime != null) for (String ext: parser.supportedExtensions()) {
-            ext = ext.toLowerCase(Locale.ROOT);
-            final String s = ext2mime.get(ext);
-            if (s != null && !s.equals(prototypeMime)) AbstractParser.log.info("Parser for extension '" + ext + "' was set to mime '" + s + "', overwriting with new mime '" + prototypeMime + "'.");
-            ext2mime.put(ext, prototypeMime);
+        if (prototypeMime != null) {
+            for (String ext : parser.supportedExtensions()) {
+                ext = ext.toLowerCase(Locale.ROOT);
+                final String s = ext2mime.get(ext);
+                if (s != null && !s.equals(prototypeMime)) {
+                    AbstractParser.log.info("Parser for extension '" + ext + "' was set to mime '" + s + "', overwriting with new mime '" + prototypeMime + "'.");
+                }
+                ext2mime.put(ext, prototypeMime);
+            }
         }
 
         for (String ext: parser.supportedExtensions()) {
@@ -170,7 +172,7 @@ public final class TextParser {
             ext = ext.toLowerCase(Locale.ROOT);
             LinkedHashSet<Parser> p0 = ext2parser.get(ext);
             if (p0 == null) {
-                p0 = new LinkedHashSet<Parser>();
+                p0 = new LinkedHashSet<>();
                 ext2parser.put(ext, p0);
             }
             p0.add(parser);
@@ -238,7 +240,7 @@ public final class TextParser {
 
         return docs;
     }
-    
+
     private static Document[] parseSource(
             final DigestURL location,
             String mimeType,
@@ -278,7 +280,7 @@ public final class TextParser {
 			/* Also check if we have a ByteArrayInputStream as source to prevent useless bytes duplication in a new byte array */
         	canStream = true;
         }
-        
+
         // if we do not have more than one non generic parser, or the content size is over MaxInt (2GB), or is over the totally available memory,
         // or stream is already in memory as a ByteArrayInputStream
         // then we use only stream-oriented parser.
@@ -289,7 +291,7 @@ public final class TextParser {
 				int rewindSize = 10 * 1024;
 				final InputStream markableStream;
 				if(sourceStream instanceof ByteArrayInputStream) {
-					/* No nead to use a wrapping buffered stream when the source is already entirely in memory. 
+					/* No nead to use a wrapping buffered stream when the source is already entirely in memory.
 					 * What's more, ByteArrayInputStream has no read limit when marking.*/
 					markableStream = sourceStream;
 				} else {
@@ -297,34 +299,34 @@ public final class TextParser {
 				}
 				/* Mark now to allow resetting the buffered stream to the beginning of the stream */
 				markableStream.mark(rewindSize);
-				
+
 				/* Loop on parser : they are supposed to be sorted in order to start with the most specific and end with the most generic */
 				for(Parser parser : idioms) {
-					/* Wrap in a CloseShieldInputStream to prevent SAX parsers closing the sourceStream 
+					/* Wrap in a CloseShieldInputStream to prevent SAX parsers closing the sourceStream
 					 * and so let us eventually reuse the same opened stream with other parsers on parser failure */
 					CloseShieldInputStream nonCloseInputStream = new CloseShieldInputStream(markableStream);
-					
+
 					try {
 						return parseSource(location, mimeType, parser, charset, ignore_class_name, scraper, timezoneOffset,
 								nonCloseInputStream, maxLinks, maxBytes);
 					} catch (Parser.Failure e) {
-						/* Try to reset the marked stream. If the failed parser has consumed too many bytes : 
+						/* Try to reset the marked stream. If the failed parser has consumed too many bytes :
 						 * too bad, the marks is invalid and process fails now with an IOException */
 						markableStream.reset();
-						
-						if(parser instanceof gzipParser && e.getCause() instanceof GZIPOpeningStreamException 
+
+						if(parser instanceof gzipParser && e.getCause() instanceof GZIPOpeningStreamException
 								&& (idioms.size() == 1 || (idioms.size() == 2 && idioms.contains(genericIdiom)))) {
 							/* The gzip parser failed directly when opening the content stream : before falling back to the generic parser,
 							 * let's have a chance to parse the stream as uncompressed. */
-							 /* Indeed, this can be a case of misconfigured web server, providing both headers "Content-Encoding" with value "gzip", 
+							 /* Indeed, this can be a case of misconfigured web server, providing both headers "Content-Encoding" with value "gzip",
 							  * and "Content-type" with value such as "application/gzip".
 							 * In that case our HTTP client (see GzipResponseInterceptor) is already uncompressing the stream on the fly,
-							 * that's why the gzipparser fails opening the stream. 
+							 * that's why the gzipparser fails opening the stream.
 							 * (see RFC 7231 section 3.1.2.2 for "Content-Encoding" header specification https://tools.ietf.org/html/rfc7231#section-3.1.2.2)*/
-							gzipParser gzParser = (gzipParser)parser; 
-						
+							gzipParser gzParser = (gzipParser)parser;
+
 							nonCloseInputStream = new CloseShieldInputStream(markableStream);
-							
+
 							Document maindoc = gzipParser.createMainDocument(location, mimeType, charset, gzParser);
 
 							try {
@@ -349,7 +351,7 @@ public final class TextParser {
 
         // in case that we know more parsers we first transform the content into a byte[] and use that as base
         // for a number of different parse attempts.
-		
+
 		int maxBytesToRead = -1;
 		if(maxBytes < Integer.MAX_VALUE) {
 			/* Load at most maxBytes + 1 :
@@ -360,7 +362,7 @@ public final class TextParser {
 		if(contentLength >= 0 && contentLength < maxBytesToRead) {
 			maxBytesToRead = (int)contentLength;
 		}
-        
+
         byte[] b = null;
         try {
             b = FileUtils.read(sourceStream, maxBytesToRead);
@@ -372,16 +374,23 @@ public final class TextParser {
         return docs;
     }
 
-	public static Document[] parseSource(final DigestURL location, String mimeType, final String charset,
-			final Set<String> ignore_class_name,
-			final VocabularyScraper scraper, final int timezoneOffset, final int depth, final long contentLength,
-			final InputStream sourceStream) throws Parser.Failure {
+	public static Document[] parseSource(
+            final DigestURL location,
+            final String mimeType,
+            final String charset,
+            final Set<String> ignore_class_name,
+            final VocabularyScraper scraper,
+            final int timezoneOffset,
+            final int depth,
+            final long contentLength,
+			final InputStream sourceStream
+    ) throws Parser.Failure {
 		return parseSource(location, mimeType, charset, ignore_class_name, scraper, timezoneOffset, depth, contentLength, sourceStream,
 				Integer.MAX_VALUE, Long.MAX_VALUE);
 	}
-    
+
     /**
-     * Try to limit the parser processing with a maximum total number of links detection (anchors, images links, media links...) 
+     * Try to limit the parser processing with a maximum total number of links detection (anchors, images links, media links...)
      * or a maximum amount of content bytes to parse. Limits apply only when the available parsers for the resource media type support parsing within limits
      * (see {@link Parser#isParseWithLimitsSupported()}. When available parsers do
 	 * not support parsing within limits, an exception is thrown when
@@ -392,7 +401,7 @@ public final class TextParser {
      * @param timezoneOffset the local time zone offset
      * @param depth the current depth of the crawl
      * @param contentLength the length of the source, if known (else -1 should be used)
-     * @param source a input stream
+     * @param sourceStream a input stream
      * @param maxLinks the maximum total number of links to parse and add to the result documents
      * @param maxBytes the maximum number of content bytes to process
      * @return a list of documents that result from parsing the source, with empty or null text.
@@ -404,9 +413,9 @@ public final class TextParser {
 		return parseSource(location, mimeType, charset, new HashSet<String>(), new VocabularyScraper(), timezoneOffset, depth, contentLength,
 				sourceStream, maxLinks, maxBytes);
 	}
-    
+
     /**
-     * 
+     *
      * @param location the URL of the source
      * @param mimeType the mime type of the source, if known
      * @param parser a parser supporting the resource at location
@@ -505,24 +514,24 @@ public final class TextParser {
                 	} else {
                         /* Partial parsing is not supported by this parser : check content length now */
                        	if(sourceArray.length > maxBytes) {
-                       		throw new Parser.Failure("Content size is over maximum size of " + maxBytes + "", location);		
+                       		throw new Parser.Failure("Content size is over maximum size of " + maxBytes + "", location);
                        	}
                 		docs = parser.parse(location, mimeType, documentCharset, ignore_class_name, scraper, timezoneOffset, bis);
                 	}
                 } catch (final Parser.Failure e) {
-					if(parser instanceof gzipParser && e.getCause() instanceof GZIPOpeningStreamException && 
+					if(parser instanceof gzipParser && e.getCause() instanceof GZIPOpeningStreamException &&
 							(parsers.size() == 1 || (parsers.size() == 2 && parsers.contains(genericIdiom)))) {
 						/* The gzip parser failed directly when opening the content stream : before falling back to the generic parser,
 						 * let's have a chance to parse the stream as uncompressed. */
-						 /* Indeed, this can be a case of misconfigured web server, providing both headers "Content-Encoding" with value "gzip", 
+						 /* Indeed, this can be a case of misconfigured web server, providing both headers "Content-Encoding" with value "gzip",
 						  * and "Content-type" with value such as "application/gzip".
 						 * In that case our HTTP client (see GzipResponseInterceptor) is already uncompressing the stream on the fly,
-						 * that's why the gzipparser fails opening the stream. 
+						 * that's why the gzipparser fails opening the stream.
 						 * (see RFC 7231 section 3.1.2.2 for "Content-Encoding" header specification https://tools.ietf.org/html/rfc7231#section-3.1.2.2)*/
 						gzipParser gzParser = (gzipParser)parser;
-						
+
 						bis = new ByteArrayInputStream(sourceArray);
-					
+
 						Document maindoc = gzipParser.createMainDocument(location, mimeType, charset, gzParser);
 
 						try {
@@ -645,8 +654,8 @@ public final class TextParser {
         if (mimeType2 != null && (idiom = mime2parser.get(mimeType2)) != null && !idioms.containsAll(idiom)) { // use containsAll -> idiom is a Set of parser
             idioms.addAll(idiom);
         }
-        
-        /* No matching idiom has been found : let's check if the media type ends with the "+xml" suffix so we can handle it with a generic XML parser 
+
+        /* No matching idiom has been found : let's check if the media type ends with the "+xml" suffix so we can handle it with a generic XML parser
          * (see RFC 7303 - Using '+xml' when Registering XML-Based Media Types : https://tools.ietf.org/html/rfc7303#section-4.2) */
         if(idioms.isEmpty() && mimeType1 != null && mimeType1.endsWith("+xml")) {
         	idioms.add(genericXMLIdiom);
@@ -674,7 +683,7 @@ public final class TextParser {
         	return "mime type '" + mimeType + "' is denied (2)";
         }
         if (mime2parser.get(mimeType) == null) {
-            /* No matching idiom has been found : let's check if the media type ends with the "+xml" suffix as can handle it with a generic XML parser 
+            /* No matching idiom has been found : let's check if the media type ends with the "+xml" suffix as can handle it with a generic XML parser
              * (see RFC 7303 - Using '+xml' when Registering XML-Based Media Types : https://tools.ietf.org/html/rfc7303#section-4.2) */
         	if(!mimeType.endsWith("+xml")) {
         		return "no parser for mime '" + mimeType + "' available";
@@ -723,7 +732,7 @@ public final class TextParser {
 	 * response header) : convert to lower case, remove any supplementary
 	 * parameters such as the encoding (charset name), and provide a default
 	 * value when null.
-	 * 
+	 *
 	 * @param mimeType
 	 *            raw information about media type, eventually provided by a
 	 *            HTTP "Content-Type" response header

@@ -33,9 +33,6 @@ import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import org.apache.solr.common.SolrInputDocument;
-
 import net.yacy.cora.document.id.AnchorURL;
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.protocol.ClientIdentification;
@@ -43,11 +40,13 @@ import net.yacy.cora.util.ConcurrentLog;
 import net.yacy.document.Condenser;
 import net.yacy.document.Document;
 import net.yacy.document.LibraryProvider;
+import net.yacy.document.Parser;
 import net.yacy.document.TextParser;
 import net.yacy.document.VocabularyScraper;
 import net.yacy.kelondro.workflow.WorkflowProcessor;
 import net.yacy.search.schema.CollectionConfiguration;
 import net.yacy.search.schema.WebgraphConfiguration;
+import org.apache.solr.common.SolrInputDocument;
 
 /**
  * convenience class to access the yacycore library from outside of yacy to put files into the index
@@ -162,9 +161,9 @@ public class DocumentIndex extends Segment {
         }
         InputStream sourceStream = null;
         try {
-        	sourceStream = url.getInputStream(ClientIdentification.yacyInternetCrawlerAgent);
+            sourceStream = url.getInputStream(ClientIdentification.yacyInternetCrawlerAgent);
             documents = TextParser.parseSource(url, null, null, new HashSet<String>(), new VocabularyScraper(), timezoneOffset, 0, length, sourceStream);
-        } catch (final Exception e ) {
+        } catch (final IOException | Parser.Failure e ) {
             throw new IOException("cannot parse " + url.toNormalform(false) + ": " + e.getMessage());
         } finally {
         	if(sourceStream != null) {

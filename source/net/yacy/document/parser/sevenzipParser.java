@@ -27,6 +27,11 @@
 
 package net.yacy.document.parser;
 
+import SevenZip.Archive.IInArchive;
+import SevenZip.Archive.SevenZip.Handler;
+import SevenZip.Archive.SevenZipEntry;
+import SevenZip.ArchiveExtractCallback;
+import SevenZip.IInStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,7 +39,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.Set;
-
 import net.yacy.cora.document.id.AnchorURL;
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.document.id.MultiProtocolURL;
@@ -45,11 +49,6 @@ import net.yacy.document.Parser;
 import net.yacy.document.TextParser;
 import net.yacy.document.VocabularyScraper;
 import net.yacy.kelondro.util.FileUtils;
-import SevenZip.ArchiveExtractCallback;
-import SevenZip.IInStream;
-import SevenZip.Archive.IInArchive;
-import SevenZip.Archive.SevenZipEntry;
-import SevenZip.Archive.SevenZip.Handler;
 
 public class sevenzipParser extends AbstractParser implements Parser {
 
@@ -100,10 +99,14 @@ public class sevenzipParser extends AbstractParser implements Parser {
             archive.Extract(null, -1, 0, aec);
             return doc;
         } catch (final IOException e) {
-            if (e.getCause() instanceof InterruptedException)
+            if (e.getCause() instanceof InterruptedException) {
                 throw (InterruptedException)e.getCause();
-            if (e.getCause() instanceof Parser.Failure)
+            }
+
+            if (e.getCause() instanceof Parser.Failure) {
                 throw (Parser.Failure)e.getCause();
+            }
+
             throw new Parser.Failure(
                     "error processing 7zip archive at internal file " + aec.getCurrentFilePath() + ": " + e.getMessage(),
                     location);
@@ -119,7 +122,7 @@ public class sevenzipParser extends AbstractParser implements Parser {
             final Set<String> ignore_class_name,
             final int timezoneOffset,
             final byte[] source) throws Parser.Failure, InterruptedException {
-        return parse(location, mimeType, charset, ignore_class_name, timezoneOffset, new ByteArrayIInStream(source));
+        return this.parse(location, mimeType, charset, ignore_class_name, timezoneOffset, new ByteArrayIInStream(source));
     }
 
     @Override
@@ -127,8 +130,8 @@ public class sevenzipParser extends AbstractParser implements Parser {
             final DigestURL location,
             final String mimeType,
             final String charset,
-            Set<String> ignore_class_name,
-            final VocabularyScraper scraper, 
+            final Set<String> ignore_class_name,
+            final VocabularyScraper scraper,
             final int timezoneOffset,
             final InputStream source) throws Parser.Failure, InterruptedException {
         try {

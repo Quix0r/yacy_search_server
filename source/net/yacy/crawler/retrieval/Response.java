@@ -30,7 +30,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
-
 import net.yacy.cora.document.analysis.Classification;
 import net.yacy.cora.document.encoding.ASCII;
 import net.yacy.cora.document.encoding.UTF8;
@@ -71,7 +70,7 @@ public class Response {
     private        byte[]             content;
     private        int                status;          // tracker indexing status, see status defs below
     private final  boolean            fromCache;
-    
+
     /** Maximum file size to put in cache for crawler */
     public static final long CRAWLER_MAX_SIZE_TO_CACHE = 10 * 1024L * 1024L;
 
@@ -116,7 +115,7 @@ public class Response {
         if (ext.equals("asf"))  return DT_FLASH;
         return DT_UNKNOWN;
     }
-    
+
     /**
      * doctype calculation based on file extensions; this is the url wrapper
      * @param url
@@ -201,7 +200,7 @@ public class Response {
         this.content = content;
         this.fromCache = fromCache;
         if (this.responseHeader != null && content != null && Integer.parseInt(this.responseHeader.get(HeaderFramework.CONTENT_LENGTH, "0")) <= content.length) {
-            this.responseHeader.put(HeaderFramework.CONTENT_LENGTH, Integer.toString(content.length)); // repair length 
+            this.responseHeader.put(HeaderFramework.CONTENT_LENGTH, Integer.toString(content.length)); // repair length
         }
     }
 
@@ -223,11 +222,11 @@ public class Response {
         this.fromCache = true;
         if (this.responseHeader != null) this.responseHeader.put(HeaderFramework.CONTENT_LENGTH, "0"); // 'virtual' length, shows that the resource was not loaded
     }
-    
+
     public void updateStatus(final int newStatus) {
         this.status = newStatus;
     }
-    
+
     /**
      * @return the original request that produced this response
      */
@@ -238,7 +237,7 @@ public class Response {
     public ResponseHeader getResponseHeader() {
         return this.responseHeader;
     }
-    
+
     public RequestHeader getRequestHeader() {
 		return this.requestHeader;
 	}
@@ -318,7 +317,7 @@ public class Response {
     public void setContent(final byte[] data) {
         this.content = data;
         if (this.responseHeader != null && this.content != null && Integer.parseInt(this.responseHeader.get(HeaderFramework.CONTENT_LENGTH, "0")) <= content.length) {
-            this.responseHeader.put(HeaderFramework.CONTENT_LENGTH, Integer.toString(content.length)); // repair length 
+            this.responseHeader.put(HeaderFramework.CONTENT_LENGTH, Integer.toString(content.length)); // repair length
         }
     }
 
@@ -446,7 +445,7 @@ public class Response {
     public boolean isFreshForProxy() {
 
         if (Switchboard.getSwitchboard().getConfigBool("proxyAlwaysFresh", false)) return true;
-        
+
         // -CGI access in request
         // CGI access makes the page very individual, and therefore not usable
         // in caches
@@ -868,11 +867,9 @@ public class Response {
         if (supportError != null) throw new Parser.Failure("no parser support:" + supportError, url());
         try {
             return TextParser.parseSource(url(), this.responseHeader == null ? null : this.responseHeader.getContentType(), this.responseHeader == null ? StandardCharsets.UTF_8.name() : this.responseHeader.getCharacterEncoding(), new HashSet<String>(), new VocabularyScraper(), this.request.timezoneOffset(), this.request.depth(), this.content);
-        } catch(Parser.Failure e) {
+        } catch(final Parser.Failure e) {
         	throw e;
-        } catch (final Exception e) {
-            return null;
         }
-
     }
+
 }
