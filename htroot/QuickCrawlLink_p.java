@@ -31,7 +31,6 @@
 
 import java.net.MalformedURLException;
 import java.util.Date;
-
 import net.yacy.cora.document.encoding.UTF8;
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.federate.yacy.CacheStrategy;
@@ -70,7 +69,7 @@ public class QuickCrawlLink_p {
         } else {
             port = sb.getConfigInt(SwitchboardConstants.SERVER_PORT, 8090);
         }
-        
+
         prop.put("mode_host", Domains.LOCALHOST);
         prop.put("mode_port", port);
 
@@ -131,7 +130,7 @@ public class QuickCrawlLink_p {
             indexSegment.fulltext().remove(urlhash);
             sb.crawlQueues.noticeURL.removeByURLHash(urlhash);
             int timezoneOffset = post.getInt("timezoneOffset", 0);
-            
+
             // create crawling profile
             CrawlProfile pe = null;
             try {

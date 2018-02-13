@@ -35,14 +35,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import net.yacy.cora.document.id.AnchorURL;
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.document.VocabularyScraper;
 import net.yacy.kelondro.util.FileUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Unit tests for ContentScrapper class.
@@ -50,18 +48,18 @@ import net.yacy.kelondro.util.FileUtils;
  *
  */
 public class ContentScraperTest {
-	
+
 	@Test
 	public final void testParseSizes() {
 		/* Normal case */
 		Set<Dimension> sizes = ContentScraper.parseSizes("96x128");
 		Assert.assertEquals(1, sizes.size());
 		Assert.assertTrue(sizes.contains(new Dimension(96, 128)));
-		
+
 		/* "any" keyword */
 		sizes = ContentScraper.parseSizes("any");
 		Assert.assertEquals(0, sizes.size());
-		
+
 		/* Multiple valid sizes, lower and upper case separator */
 		sizes = ContentScraper.parseSizes("96x128 16X16 1X2 1024x768");
 		Assert.assertEquals(4, sizes.size());
@@ -69,31 +67,31 @@ public class ContentScraperTest {
 		Assert.assertTrue(sizes.contains(new Dimension(16, 16)));
 		Assert.assertTrue(sizes.contains(new Dimension(1, 2)));
 		Assert.assertTrue(sizes.contains(new Dimension(1024, 768)));
-		
+
 		/* Duplicate entries */
 		sizes = ContentScraper.parseSizes("96x128 96X128 1X2 96x128");
 		Assert.assertEquals(2, sizes.size());
 		Assert.assertTrue(sizes.contains(new Dimension(96, 128)));
 		Assert.assertTrue(sizes.contains(new Dimension(1, 2)));
-		
+
 		/* Mutiple inner and trailing spaces */
 		sizes = ContentScraper.parseSizes("  96x128  16X16  ");
 		Assert.assertEquals(2, sizes.size());
 		Assert.assertTrue(sizes.contains(new Dimension(96, 128)));
 		Assert.assertTrue(sizes.contains(new Dimension(16, 16)));
-		
+
 		/* Empty string */
 		sizes = ContentScraper.parseSizes("");
 		Assert.assertEquals(0, sizes.size());
-		
+
 		/* null string */
 		sizes = ContentScraper.parseSizes(null);
 		Assert.assertEquals(0, sizes.size());
-		
+
 		/* Invalid sizes */
 		sizes = ContentScraper.parseSizes("096x0128 -16x-16 0x0 x768 78x axb 1242");
 		Assert.assertEquals(0, sizes.size());
-		
+
 		/* Mix of valid and invalid sizes */
 		sizes = ContentScraper.parseSizes("96x128 16X16 axb 123 78x32");
 		Assert.assertEquals(3, sizes.size());
@@ -109,12 +107,12 @@ public class ContentScraperTest {
 		Assert.assertEquals(2, tokens.size());
 		Assert.assertTrue(tokens.contains("abc"));
 		Assert.assertTrue(tokens.contains("de"));
-		
+
 		/* One item only */
 		tokens = ContentScraper.parseSpaceSeparatedTokens("abc");
 		Assert.assertEquals(1, tokens.size());
 		Assert.assertTrue(tokens.contains("abc"));
-		
+
 		/* Mutiple inner and trailing spaces */
 		tokens = ContentScraper.parseSpaceSeparatedTokens("  abc  d efff    fgj  ");
 		Assert.assertEquals(4, tokens.size());
@@ -122,7 +120,7 @@ public class ContentScraperTest {
 		Assert.assertTrue(tokens.contains("d"));
 		Assert.assertTrue(tokens.contains("efff"));
 		Assert.assertTrue(tokens.contains("fgj"));
-		
+
 		/* Duplicate entries */
 		tokens = ContentScraper.parseSpaceSeparatedTokens("abc bb abc abc ABC");
 		Assert.assertEquals(3, tokens.size());
@@ -130,11 +128,11 @@ public class ContentScraperTest {
 		/* ignoring case is not the purpose of this function */
 		Assert.assertTrue(tokens.contains("ABC"));
 		Assert.assertTrue(tokens.contains("bb"));
-		
+
 		/* Empty string */
 		tokens = ContentScraper.parseSpaceSeparatedTokens("");
 		Assert.assertEquals(0, tokens.size());
-		
+
 		/* Null string */
 		tokens = ContentScraper.parseSpaceSeparatedTokens(null);
 		Assert.assertEquals(0, tokens.size());
@@ -166,7 +164,7 @@ public class ContentScraperTest {
         }
         scraper.close();
     }
-    
+
     /**
      * Test absolute URLs detection in plain text
      * @throws MalformedURLException should not happen
@@ -194,7 +192,7 @@ public class ContentScraperTest {
 			Assert.assertEquals(urls.size(), detectedURLs.size());
 			Assert.assertTrue(urls.containsAll(detectedURLs));
 		}
-		
+
 		/* URLs surrounded with parenthesis */
 		String[] texts = { "(http://yacy.net)", "YaCy home page (http://yacy.net)",
 				"Nested parentheses (YaCy home page (http://yacy.net))",
@@ -206,8 +204,8 @@ public class ContentScraperTest {
 			Assert.assertEquals(1, detectedURLs.size());
 			Assert.assertEquals(new AnchorURL("http://yacy.net"), detectedURLs.iterator().next());
 		}
-		
-		/* URLs surrounded with square brackets */ 
+
+		/* URLs surrounded with square brackets */
 		//http://[abcd:ef01:2345:6789:abcd:ef01:2345:6789]/
 		String[] squareBracketsTexts = { "[http://yacy.net]", "YaCy home page [http://yacy.net]",
 				"Nested brackets [YaCy home page [http://yacy.net]]",
@@ -218,8 +216,8 @@ public class ContentScraperTest {
 			Assert.assertEquals(1, detectedURLs.size());
 			Assert.assertEquals(new AnchorURL("http://yacy.net"), detectedURLs.iterator().next());
 		}
-		
-		/* URLs surrounded with curly brackets */ 
+
+		/* URLs surrounded with curly brackets */
 		//http://[abcd:ef01:2345:6789:abcd:ef01:2345:6789]/
 		String[] curlyBracketsTexts = { "{http://yacy.net}", "YaCy home page {http://yacy.net}",
 				"Nested brackets {YaCy home page {http://yacy.net}}",
@@ -230,47 +228,47 @@ public class ContentScraperTest {
 			Assert.assertEquals(1, detectedURLs.size());
 			Assert.assertEquals(new AnchorURL("http://yacy.net"), detectedURLs.iterator().next());
 		}
-		
+
 		/* URL with parenthesis */
 		String text = "Example: https://en.wikipedia.org/wiki/Firefox_(disambiguation)";
 		Collection<AnchorURL> detectedURLs = new ArrayList<>();
 		ContentScraper.findAbsoluteURLs(text, detectedURLs, null);
 		Assert.assertEquals(1, detectedURLs.size());
 		Assert.assertEquals(new AnchorURL("https://en.wikipedia.org/wiki/Firefox_(disambiguation)"), detectedURLs.iterator().next());
-		
+
 		/* IPV6 host */
 		text = "URL with IPV6 host : http://[abcd:ef01:2345:6789:abcd:ef01:2345:6789]";
 		detectedURLs = new ArrayList<>();
 		ContentScraper.findAbsoluteURLs(text, detectedURLs, null);
 		Assert.assertEquals(1, detectedURLs.size());
 		Assert.assertEquals(new AnchorURL("http://[abcd:ef01:2345:6789:abcd:ef01:2345:6789]"), detectedURLs.iterator().next());
-		
+
 		/* Text containing only the '://' pattern */
 		detectedURLs = new ArrayList<>();
 		ContentScraper.findAbsoluteURLs("An absolute URL should contain the '://' pattern", detectedURLs, null);
 		Assert.assertEquals(0, detectedURLs.size());
-		
+
 		/* Text containing only the 'http://' and 'https://' patterns */
 		detectedURLs = new ArrayList<>();
 		ContentScraper.findAbsoluteURLs("An absolute HTTP URL should start with 'http://' or 'https://'", detectedURLs, null);
 		Assert.assertEquals(0, detectedURLs.size());
-		
+
 		/* Text containing a malformed URL */
 		detectedURLs = new ArrayList<>();
 		ContentScraper.findAbsoluteURLs("The URL https://example.com:demo is malformed", detectedURLs, null);
 		Assert.assertEquals(0, detectedURLs.size());
-		
+
 		/* Empty text */
 		detectedURLs = new ArrayList<>();
 		ContentScraper.findAbsoluteURLs("", detectedURLs, null);
 		Assert.assertEquals(0, detectedURLs.size());
-		
+
 		/* Null text */
 		detectedURLs = new ArrayList<>();
 		ContentScraper.findAbsoluteURLs("", detectedURLs, null);
 		Assert.assertEquals(0, detectedURLs.size());
     }
-    
+
     /**
      * Test absolute URLs detection in plain text with maxURLs parameter
      * @throws MalformedURLException should not happen
@@ -278,25 +276,25 @@ public class ContentScraperTest {
     @Test
     public void testFindAbsoluteURLsMaxURLs() throws MalformedURLException {
     	final String text = "Some test URLS : http://yacy.net - http://forum.yacy.de - https://en.wikipedia.org";
-    	
+
     	/* No limit */
     	ArrayList<AnchorURL> detectedURLs = new ArrayList<>();
     	ContentScraper.findAbsoluteURLs(text, detectedURLs, null, Long.MAX_VALUE);
     	Assert.assertEquals(3, detectedURLs.size());
-    	
+
     	/* Test from zero limit, to limit value equals to the total number of URLs in text */
     	for(int limit = 0; limit <=3; limit++) {
     		detectedURLs = new ArrayList<>();
     		ContentScraper.findAbsoluteURLs(text, detectedURLs, null, limit);
     		Assert.assertEquals(limit, detectedURLs.size());
     	}
-    	
+
     	/* Limit greater than total number of URLs in text */
     	detectedURLs = new ArrayList<>();
     	ContentScraper.findAbsoluteURLs(text, detectedURLs, null, 4);
     	Assert.assertEquals(3, detectedURLs.size());
     }
-    
+
     /**
      * Test unpaired brackets cleaning
      */
@@ -308,7 +306,7 @@ public class ContentScraperTest {
     	Assert.assertEquals("", ContentScraper.removeUnpairedBrackets("", '{', '}'));
     	/* No bracket at all */
     	Assert.assertEquals("abc", ContentScraper.removeUnpairedBrackets("abc", '{', '}'));
-    	
+
     	/* Missing one or more opening mark */
     	Assert.assertEquals("", ContentScraper.removeUnpairedBrackets("}", '{', '}'));
     	Assert.assertEquals("abc", ContentScraper.removeUnpairedBrackets("abc}", '{', '}'));
@@ -321,10 +319,10 @@ public class ContentScraperTest {
     	Assert.assertEquals("{abc}def", ContentScraper.removeUnpairedBrackets("{abc}def}", '{', '}'));
     	Assert.assertEquals("{abc}def", ContentScraper.removeUnpairedBrackets("{abc}def}hij}", '{', '}'));
     	Assert.assertEquals("{{abc}{def}}", ContentScraper.removeUnpairedBrackets("{{abc}{def}}}", '{', '}'));
-    	
+
     	/* Missing both opening and closing */
     	Assert.assertEquals("abc", ContentScraper.removeUnpairedBrackets("abc}de{f", '{', '}'));
-    	
+
     	/* Missing one or more closing mark */
     	Assert.assertEquals("", ContentScraper.removeUnpairedBrackets("{", '{', '}'));
     	Assert.assertEquals("", ContentScraper.removeUnpairedBrackets("{abc", '{', '}'));
@@ -334,70 +332,69 @@ public class ContentScraperTest {
     	Assert.assertEquals("", ContentScraper.removeUnpairedBrackets("{{abc}", '{', '}'));
     	Assert.assertEquals("", ContentScraper.removeUnpairedBrackets("{abc{def}", '{', '}'));
     	Assert.assertEquals("{{abc}{def}}", ContentScraper.removeUnpairedBrackets("{{abc}{def}}{", '{', '}'));
-    	
+
     	/* Correctly paired marks */
     	Assert.assertEquals("abc{}", ContentScraper.removeUnpairedBrackets("abc{}", '{', '}'));
     	Assert.assertEquals("{abc}", ContentScraper.removeUnpairedBrackets("{abc}", '{', '}'));
     	Assert.assertEquals("{abc}{def}", ContentScraper.removeUnpairedBrackets("{abc}{def}", '{', '}'));
     	Assert.assertEquals("{{abc}{def}}", ContentScraper.removeUnpairedBrackets("{{abc}{def}}", '{', '}'));
     }
-    
+
     /**
      * Test microdata itemtype attribute parsing
-     * @throws IOException 
+     * @throws IOException
      */
     @Test
     public void testParseMicroDataItemType() throws IOException {
     	final String htmlHeader = "<!DOCTYPE html><head><title>Test document</title></head>";
         final DigestURL docUrl = new DigestURL("http://example.org/microdata.html");
-        
-        
+
+
         final Map<String, String[]> html2Results = new HashMap<>();
         /* Basic microdata syntax example with no item type */
     	String html = htmlHeader + "<div itemscope><p>My name is <span itemprop=\"name\">Elizabeth</span>.</p></div>";
     	String[] expectedUrls = {};
     	html2Results.put(html, expectedUrls);
-    	
+
     	/* Nested items with no item type */
-    	html = "<div itemscope>\n" + 
-    	" <p>Name: <span itemprop=\"name\">Amanda</span></p>\n" + 
-    	" <p>Band: <span itemprop=\"band\" itemscope> <span itemprop=\"name\">Jazz Band</span> (<span itemprop=\"size\">12</span> players)</span></p>\n" + 
+    	html = "<div itemscope>\n" +
+    	" <p>Name: <span itemprop=\"name\">Amanda</span></p>\n" +
+    	" <p>Band: <span itemprop=\"band\" itemscope> <span itemprop=\"name\">Jazz Band</span> (<span itemprop=\"size\">12</span> players)</span></p>\n" +
     	"</div>";
     	expectedUrls = new String[0];
     	html2Results.put(html, expectedUrls);
-    	
+
     	/* One typed item */
     	html = htmlHeader + "<div itemscope itemtype=\"https://schema.org/LocalBusiness\"><img itemprop=\"logo\" src=\"our-logo.png\" alt=\"Our Company\"></div>";
     	expectedUrls = new String[]{"https://schema.org/LocalBusiness"};
     	html2Results.put(html, expectedUrls);
-    	
+
     	/* more than one type per item */
-    	html = htmlHeader + "<dl itemscope itemtype=\"https://md.example.com/loco https://md.example.com/lighting\">" + 
-    	" <dt>Name:\n" + 
-    	" <dd itemprop=\"name\">Tank Locomotive (DB 80)\n" + 
-    	" <dt>Product code:\n" + 
-    	" <dd itemprop=\"product-code\">33041\n" + 
-    	" <dt>Scale:\n" + 
-    	" <dd itemprop=\"scale\">HO\n" + 
-    	" <dt>Digital:\n" + 
-    	" <dd itemprop=\"digital\">Delta\n" + 
+    	html = htmlHeader + "<dl itemscope itemtype=\"https://md.example.com/loco https://md.example.com/lighting\">" +
+    	" <dt>Name:\n" +
+    	" <dd itemprop=\"name\">Tank Locomotive (DB 80)\n" +
+    	" <dt>Product code:\n" +
+    	" <dd itemprop=\"product-code\">33041\n" +
+    	" <dt>Scale:\n" +
+    	" <dd itemprop=\"scale\">HO\n" +
+    	" <dt>Digital:\n" +
+    	" <dd itemprop=\"digital\">Delta\n" +
     	"</dl>";
     	expectedUrls = new String[]{"https://md.example.com/loco", "https://md.example.com/lighting"};
     	html2Results.put(html, expectedUrls);
-    	
+
     	/* Nested typed items */
-    	html = htmlHeader + "<div itemscope itemtype=\"http://schema.org/Product\">\n" + 
-    	" <span itemprop=\"name\">Panasonic White 60L Refrigerator</span>\n" + 
-    	" <img src=\"panasonic-fridge-60l-white.jpg\" alt=\"\">\n" + 
-    	"  <div itemprop=\"aggregateRating\"\n" + 
-    	"       itemscope itemtype=\"http://schema.org/AggregateRating\">\n" + 
-    	"   <meter itemprop=\"ratingValue\" min=0 value=3.5 max=5>Rated 3.5/5</meter>\n" + 
-    	"   (based on <span itemprop=\"reviewCount\">11</span> customer reviews)\n" + 
-    	"  </div>\n" + 
+    	html = htmlHeader + "<div itemscope itemtype=\"http://schema.org/Product\">\n" +
+    	" <span itemprop=\"name\">Panasonic White 60L Refrigerator</span>\n" +
+    	" <img src=\"panasonic-fridge-60l-white.jpg\" alt=\"\">\n" +
+    	"  <div itemprop=\"aggregateRating\"\n" +
+    	"       itemscope itemtype=\"http://schema.org/AggregateRating\">\n" +
+    	"   <meter itemprop=\"ratingValue\" min=0 value=3.5 max=5>Rated 3.5/5</meter>\n" +
+    	"   (based on <span itemprop=\"reviewCount\">11</span> customer reviews)\n" +
+    	"  </div>\n" +
     	"</div>";
     	expectedUrls = new String[]{"http://schema.org/Product", "http://schema.org/AggregateRating"};
     	html2Results.put(html, expectedUrls);
-  
 
 		for (final Entry<String, String[]> html2Result : html2Results.entrySet()) {
 			ContentScraper scraper = new ContentScraper(docUrl, 10, new HashSet<String>(), new VocabularyScraper(), 0);

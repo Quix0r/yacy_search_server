@@ -29,6 +29,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+import com.google.common.io.Files;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -38,7 +39,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.protocol.ClientIdentification;
 import net.yacy.cora.protocol.RequestHeader;
@@ -47,9 +47,6 @@ import net.yacy.search.Switchboard;
 import net.yacy.search.SwitchboardConstants;
 import net.yacy.server.serverObjects;
 import net.yacy.server.serverSwitch;
-
-import com.google.common.io.Files;
-
 
 public class ConfigAppearance_p {
 
@@ -103,7 +100,7 @@ public class ConfigAppearance_p {
                 try {
                     final DigestURL u = new DigestURL(url);
                     it = FileUtils.strings(u.get(ClientIdentification.yacyInternetCrawlerAgent, null, null));
-                } catch (final IOException e) {
+                } catch (final IOException | IllegalAccessException e) {
                     prop.put("status", "1");// unable to get URL
                     prop.put("status_url", url);
                     return prop;

@@ -31,7 +31,6 @@ import java.util.Date;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.document.id.MultiProtocolURL;
 import net.yacy.document.AbstractParser;
@@ -71,7 +70,7 @@ public class zipParser extends AbstractParser implements Parser {
             final String mimeType,
             final String charset,
             final Set<String> ignore_class_name,
-            final VocabularyScraper scraper, 
+            final VocabularyScraper scraper,
             final int timezoneOffset,
             final InputStream source)
             throws Parser.Failure, InterruptedException {

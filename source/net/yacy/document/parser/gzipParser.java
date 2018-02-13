@@ -35,9 +35,6 @@ import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
-
-import org.apache.commons.compress.compressors.gzip.GzipUtils;
-
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.document.id.MultiProtocolURL;
 import net.yacy.document.AbstractParser;
@@ -46,13 +43,14 @@ import net.yacy.document.Parser;
 import net.yacy.document.TextParser;
 import net.yacy.document.VocabularyScraper;
 import net.yacy.kelondro.util.FileUtils;
+import org.apache.commons.compress.compressors.gzip.GzipUtils;
 
 /**
  * Parses a gz archive.
  * Unzips and parses the content and adds it to the created main document
  */
 public class gzipParser extends AbstractParser implements Parser {
-	
+
 	private static final int DEFAULT_DEPTH = 999;
 
     public gzipParser() {
@@ -72,8 +70,8 @@ public class gzipParser extends AbstractParser implements Parser {
             final DigestURL location,
             final String mimeType,
             final String charset,
-            Set<String> ignore_class_name,
-            final VocabularyScraper scraper, 
+            final Set<String> ignore_class_name,
+            final VocabularyScraper scraper,
             final int timezoneOffset,
             final InputStream source) throws Parser.Failure, InterruptedException {
 
@@ -146,7 +144,7 @@ public class gzipParser extends AbstractParser implements Parser {
      * @param location the parsed resource URL
      * @param mimeType the media type of the resource
      * @param charset the charset name if known
-     * @param an instance of gzipParser that is registered as the parser origin of the document
+     * @param parser instance of gzipParser that is registered as the parser origin of the document
      * @return a Document instance
      */
 	public static Document createMainDocument(final DigestURL location, final String mimeType, final String charset, final gzipParser parser) {
@@ -172,12 +170,13 @@ public class gzipParser extends AbstractParser implements Parser {
 		        new Date());
 		return maindoc;
 	}
-	
+
 	/**
 	 * Parse content in an open stream uncompressing on the fly a gzipped resource.
-	 * @param location the URL of the gzipped resource 
+	 * @param location the URL of the gzipped resource
 	 * @param charset the charset name if known
 	 * @param timezoneOffset the local time zone offset
+     * @param depth Crawl depths
 	 * @param compressedInStream an open stream uncompressing on the fly the compressed content
 	 * @param maxLinks
 	 *            the maximum total number of links to parse and add to the
@@ -200,19 +199,19 @@ public class gzipParser extends AbstractParser implements Parser {
     		final String locationPath = location.getPath();
         	final String contentPath = locationPath.substring(0, locationPath.length() - compressedFileName.length()) + contentfilename;
 			final DigestURL contentLocation = new DigestURL(location.getProtocol(), location.getHost(), location.getPort(), contentPath);
-			
+
 	        /* Rely on the supporting parsers to respect the maxLinks and maxBytes limits on compressed content */
 	        return TextParser.parseWithLimits(contentLocation, mime, charset, timezoneOffset, depth, -1, compressedInStream, maxLinks, maxBytes);
 		} catch (MalformedURLException e) {
 			throw new Parser.Failure("Unexpected error while parsing gzip file. " + e.getMessage(), location);
 		}
 	}
-    
+
     @Override
     public boolean isParseWithLimitsSupported() {
     	return true;
     }
-    
+
     @Override
     public Document[] parseWithLimits(final DigestURL location, final String mimeType, final String charset, final VocabularyScraper scraper,
     		final int timezoneOffset, final InputStream source, final int maxLinks, final long maxBytes)
@@ -220,8 +219,8 @@ public class gzipParser extends AbstractParser implements Parser {
         Document maindoc = null;
         GZIPInputStream zippedContent = null;
         try {
-        	/* Only use in-memory stream here (no temporary file) : the parsers 
-        	 * matching compressed content are expected to handle properly the maxBytes limit and terminate 
+        	/* Only use in-memory stream here (no temporary file) : the parsers
+        	 * matching compressed content are expected to handle properly the maxBytes limit and terminate
         	 * before an eventual OutOfMemory occurs */
             zippedContent = new GZIPInputStream(source);
         } catch(IOException e) {
@@ -232,7 +231,7 @@ public class gzipParser extends AbstractParser implements Parser {
         }
         try {
             maindoc = createMainDocument(location, mimeType, charset, this);
-            
+
             Document[] docs = parseCompressedInputStream(location, charset, timezoneOffset, DEFAULT_DEPTH, zippedContent, maxLinks, maxBytes);
             if (docs != null) {
             	maindoc.addSubDocuments(docs);
@@ -240,7 +239,7 @@ public class gzipParser extends AbstractParser implements Parser {
             		maindoc.setPartiallyParsed(true);
             	}
             }
-        } catch (final Exception e) {
+        } catch (final IOException | Failure e) {
             throw new Parser.Failure("Unexpected error while parsing gzip file. " + e.getMessage(),location);
         }
         return maindoc == null ? null : new Document[]{maindoc};
@@ -257,7 +256,7 @@ public class gzipParser extends AbstractParser implements Parser {
 		public GZIPOpeningStreamException() {
     		super();
     	}
-    	
+
     	public GZIPOpeningStreamException(final String message) {
     		super(message);
     	}
