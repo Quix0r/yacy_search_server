@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-
 import net.yacy.cora.document.encoding.ASCII;
 import net.yacy.cora.document.encoding.UTF8;
 import net.yacy.cora.document.id.DigestURL;
@@ -58,7 +57,7 @@ import net.yacy.search.Switchboard;
 import net.yacy.search.SwitchboardConstants;
 
 public final class CrawlSwitchboard {
-	
+
     public static final String CRAWL_PROFILE_AUTOCRAWL_DEEP = "autocrawlDeep";
     public static final String CRAWL_PROFILE_AUTOCRAWL_SHALLOW = "autocrawlShallow";
     public static final String CRAWL_PROFILE_RECRAWL_JOB = "recrawlJob";
@@ -85,7 +84,7 @@ public final class CrawlSwitchboard {
         DEFAULT_PROFILES.add(CRAWL_PROFILE_SNIPPET_GLOBAL_MEDIA);
         DEFAULT_PROFILES.add(CRAWL_PROFILE_SURROGATE);
     }
-    
+
     public static final String DBFILE_ACTIVE_CRAWL_PROFILES = "crawlProfilesActive1.heap";
     public static final String DBFILE_PASSIVE_CRAWL_PROFILES = "crawlProfilesPassive1.heap";
 
@@ -136,9 +135,7 @@ public final class CrawlSwitchboard {
             CrawlProfile p;
             try {
                 p = new CrawlProfile(this.profilesActiveCrawls.get(handle));
-            } catch (final IOException e ) {
-                p = null;
-            } catch (final SpaceExceededException e ) {
+            } catch (final IOException | SpaceExceededException e ) {
                 p = null;
             }
             if ( p == null ) {
@@ -155,16 +152,15 @@ public final class CrawlSwitchboard {
         final File profilesPassiveFile = new File(queuesRoot, DBFILE_PASSIVE_CRAWL_PROFILES);
         this.profilesPassiveCrawls = loadFromDB(profilesPassiveFile);
         for ( final byte[] handle : this.profilesPassiveCrawls.keySet() ) {
-            CrawlProfile p;
+            final CrawlProfile p;
             try {
                 p = new CrawlProfile(this.profilesPassiveCrawls.get(handle));
                 ConcurrentLog.info("CrawlProfiles", "loaded Profile " + p.handle() + ": " + p.collectionName());
-            } catch (final IOException e ) {
-                continue;
-            } catch (final SpaceExceededException e ) {
+            } catch (final IOException | SpaceExceededException e ) {
                 continue;
             }
         }
+
         log.info("Loaded passive crawl profiles from file "
             + profilesPassiveFile.getName()
             + ", "
@@ -274,11 +270,10 @@ public final class CrawlSwitchboard {
     public RowHandleSet getURLHashes(final byte[] profileKey) {
         return this.profilesActiveCrawlsCounter.get(ASCII.String(profileKey));
     }
-    
-    
+
     private void initActiveCrawlProfiles() {
     	final Switchboard sb = Switchboard.getSwitchboard();
-    	
+
     	// generate new default entry for deep auto crawl
     	this.defaultAutocrawlDeepProfile =
     	    new CrawlProfile(
@@ -363,7 +358,7 @@ public final class CrawlSwitchboard {
                 true,
                 CrawlProfile.getRecrawlDate(CRAWL_PROFILE_PROXY_RECRAWL_CYCLE),
                 -1,
-				false, true, true, false, // crawlingQ, followFrames, obeyHtmlRobotsNoindex, obeyHtmlRobotsNofollow,
+                false, true, true, false, // crawlingQ, followFrames, obeyHtmlRobotsNoindex, obeyHtmlRobotsNofollow,
                 sb.getConfigBool(SwitchboardConstants.PROXY_INDEXING_LOCAL_TEXT, true),
                 sb.getConfigBool(SwitchboardConstants.PROXY_INDEXING_LOCAL_MEDIA, true),
                 true,
@@ -474,13 +469,13 @@ public final class CrawlSwitchboard {
             UTF8.getBytes(this.defaultTextSnippetGlobalProfile.handle()),
             this.defaultTextSnippetGlobalProfile);
         this.defaultTextSnippetGlobalProfile.setCacheStrategy(CacheStrategy.IFEXIST);
-        
-        // generate new default entry for RecrawlBusyThread 
+
+        // generate new default entry for RecrawlBusyThread
         this.defaultRecrawlJobProfile = RecrawlBusyThread.buildDefaultCrawlProfile();
         this.profilesActiveCrawls.put(
             UTF8.getBytes(this.defaultRecrawlJobProfile.handle()),
             this.defaultRecrawlJobProfile);
-        
+
         // generate new default entry for greedy learning
         this.defaultTextGreedyLearningProfile =
             new CrawlProfile(
@@ -610,7 +605,7 @@ public final class CrawlSwitchboard {
             UTF8.getBytes(this.defaultSurrogateProfile.handle()),
             this.defaultSurrogateProfile);
     }
-    
+
     public CrawlProfile getPushCrawlProfile(String collection) {
         CrawlProfile genericPushProfile = this.defaultPushProfiles.get(collection);
         if (genericPushProfile != null) return genericPushProfile;
@@ -645,7 +640,7 @@ public final class CrawlSwitchboard {
         this.defaultPushProfiles.put(collection, genericPushProfile);
         return genericPushProfile;
     }
-    
+
     private void resetProfiles() {
         this.profilesActiveCrawlsCache.clear();
         final File pdb = new File(this.queuesRoot, DBFILE_ACTIVE_CRAWL_PROFILES);
@@ -707,22 +702,24 @@ public final class CrawlSwitchboard {
         }
         return profileKeys;
     }
-    
-    public Set<String> getFinishedProfiles(CrawlQueues crawlQueues) {
+
+    public Set<String> getFinishedProfiles(final CrawlQueues crawlQueues) {
         // clear the counter cache
-        this.profilesActiveCrawlsCounter.clear();        
-        
+        this.profilesActiveCrawlsCounter.clear();
+
         // find all profiles that are candidates for deletion
         Set<String> deletionCandidate = getActiveProfiles();
-        if (deletionCandidate.size() == 0) return new HashSet<String>(0);
-        
+        if (deletionCandidate.size() == 0) return new HashSet<>(0);
+
         // iterate through all the queues and see if one of these handles appear there
         // this is a time-consuming process, set a time-out
         long timeout = System.currentTimeMillis() + 60000L; // one minute time
         try {
-            for (StackType stack: StackType.values()) {
+            for (final StackType stack: StackType.values()) {
                 Iterator<Request> sei = crawlQueues.noticeURL.iterator(stack);
-                if (sei == null) continue;
+                if (sei == null) {
+                    continue;
+                }
                 Request r;
                 while (sei.hasNext()) {
                     r = sei.next();
@@ -739,24 +736,24 @@ public final class CrawlSwitchboard {
             }
             // look into the CrawlQueues.worker as well
             Map<DigestURL, Request> map = switchboard.crawlQueues.activeWorkerEntries();
-            for (Request request: map.values()) {
+            for (final Request request: map.values()) {
                 deletionCandidate.remove(request.profileHandle());
             }
         } catch (final Throwable e) {
             ConcurrentLog.logException(e);
-            return new HashSet<String>(0);
+            return new HashSet<>(0);
         }
         return deletionCandidate;
     }
-    
-    public boolean allCrawlsFinished(CrawlQueues crawlQueues) {
+
+    public boolean allCrawlsFinished(final CrawlQueues crawlQueues) {
         if (!crawlQueues.noticeURL.isEmpty()) return false;
         // look into the CrawlQueues.worker as well
         if (switchboard.crawlQueues.activeWorkerEntries().size() > 0) return false;
         return true;
     }
-    
-    public void cleanProfiles(Set<String> deletionCandidate) {
+
+    public void cleanProfiles(final Set<String> deletionCandidate) {
         // all entries that are left are candidates for deletion; do that now
         for (String h: deletionCandidate) {
             byte[] handle = ASCII.getBytes(h);
@@ -767,7 +764,7 @@ public final class CrawlSwitchboard {
             }
         }
     }
-    
+
     public synchronized void close() {
         this.profilesActiveCrawlsCache.clear();
         this.profilesActiveCrawls.close();

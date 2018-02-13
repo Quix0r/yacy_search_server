@@ -43,16 +43,6 @@ import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.util.automaton.Automata;
-import org.apache.lucene.util.automaton.Automaton;
-import org.apache.lucene.util.automaton.RegExp;
-import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrQuery.SortClause;
-import org.apache.solr.common.params.DisMaxParams;
-import org.apache.solr.common.params.FacetParams;
-
 import net.yacy.cora.document.analysis.Classification;
 import net.yacy.cora.document.analysis.Classification.ContentDomain;
 import net.yacy.cora.document.encoding.ASCII;
@@ -80,15 +70,23 @@ import net.yacy.search.index.Segment;
 import net.yacy.search.ranking.RankingProfile;
 import net.yacy.search.schema.CollectionConfiguration;
 import net.yacy.search.schema.CollectionSchema;
+import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.util.automaton.Automata;
+import org.apache.lucene.util.automaton.Automaton;
+import org.apache.lucene.util.automaton.RegExp;
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrQuery.SortClause;
+import org.apache.solr.common.params.DisMaxParams;
+import org.apache.solr.common.params.FacetParams;
 
 public final class QueryParams {
 
 	/** The default max count of item lines in navigator */
     public static final int FACETS_STANDARD_MAXCOUNT_DEFAULT = 100;
-    
+
     /** The default maximum number of date elements in the date navigator */
     public static final int FACETS_DATE_MAXCOUNT_DEFAULT = 640;
-    
+
     public enum Searchdom {
         LOCAL, CLUSTER, GLOBAL;
 
@@ -114,15 +112,15 @@ public final class QueryParams {
         defaultfacetfields.put("language", CollectionSchema.language_s);
         //missing: namespace
     }
-    
+
     public static final Bitfield empty_constraint    = new Bitfield(4, "AAAAAA");
     public static final Pattern catchall_pattern = Pattern.compile(".*");
 
     private final QueryGoal queryGoal;
     public int itemsPerPage;
     public int offset;
-    
-    /** The URL mask pattern compiled from the urlMasString. 
+
+    /** The URL mask pattern compiled from the urlMasString.
      * Null when the urlMaskString is not user provided but generated from the query modifiers */
     public Pattern urlMaskPattern;
     public Automaton urlMaskAutomaton;
@@ -130,13 +128,13 @@ public final class QueryParams {
 
     public final Pattern prefer;
     public final String tld, inlink;
-    
+
     /** true when the urlMasString is just a catch all pattern such as ".*" */
     boolean urlMask_isCatchall;
-    
+
     /** Content-Type classification of expected results */
     public final Classification.ContentDomain contentdom;
-    
+
 	/**
 	 * <p>When false, results can be extended to documents including links to documents
 	 * of {@link #contentdom} type, whithout being themselves of that type.</p>
@@ -154,16 +152,16 @@ public final class QueryParams {
 	 * 	 <li>html page embedding images : acceptable result</li>
 	 *  </ul>
 	 * </li>
-	 * </ul> 
+	 * </ul>
 	 */
     private boolean strictContentDom = false;
-    
+
 	/**
 	 * The maximum number of suggestions ("Did you mean") to display at the top of
 	 * the first search results page
 	 */
     private int maxSuggestions = 0;
-    
+
     public final String targetlang;
     protected final Collection<Tagging.Metatag> metatags;
     public final Searchdom domType;
@@ -189,13 +187,12 @@ public final class QueryParams {
     private SolrQuery cachedQuery;
     private CollectionConfiguration solrSchema;
     public final int timezoneOffset;
-    
+
     /** The max count of item lines in navigator */
     private int standardFacetsMaxCount;
-    
+
     /** The maximum number of date elements in the date navigator */
     private int dateFacetMaxCount;
-    
 
     public QueryParams(
         final QueryGoal queryGoal,
@@ -294,7 +291,7 @@ public final class QueryParams {
         this.lon = Math.floor(lon * this.kmNormal) / this.kmNormal;
         this.radius = Math.floor(radius * this.kmNormal + 1) / this.kmNormal;
         this.facetfields = new LinkedHashSet<String>();
-        
+
         this.solrSchema = indexSegment.fulltext().getDefaultConfiguration();
         for (String navkey: search_navigation) {
             CollectionSchema f = defaultfacetfields.get(navkey);
@@ -320,10 +317,10 @@ public final class QueryParams {
 	 * Generate an URL filter from the query modifier and eventual tld, usable as a
 	 * first approximation for filtering, and compatible with the yacy/search
 	 * API.<br/>
-	 * For truly accurate filtering, checking constraints against parsed URLs in 
+	 * For truly accurate filtering, checking constraints against parsed URLs in
 	 * MultiprotocolURL instances is easier and more reliable than building a complex regular
 	 * expression that must be both compatible with the JDK {@link Pattern} and with Lucene {@link RegExp}.
-	 * 
+	 *
 	 * @param modifier
 	 *            query modifier with eventual protocol, sitehost and filetype
 	 *            constraints. The modifier parameter itselft must not be null.
@@ -375,7 +372,7 @@ public final class QueryParams {
         // the number of result lines that are displayed at once (size of result page)
         return this.itemsPerPage;
     }
-    
+
     public void setOffset(final int newOffset) {
         this.offset = newOffset;
     }
@@ -383,49 +380,49 @@ public final class QueryParams {
     public boolean isLocal() {
         return this.domType == Searchdom.LOCAL;
     }
-    
+
     /**
      * @return the max count of item lines in standard navigators
      */
     public int getStandardFacetsMaxCount() {
 		return this.standardFacetsMaxCount;
 	}
-    
+
     /**
      * @param standardFacetsMaxCount the max count of item lines in standard navigators
      */
     public void setStandardFacetsMaxCount(final int standardFacetsMaxCount) {
 		this.standardFacetsMaxCount = standardFacetsMaxCount;
 	}
-    
+
     /**
      * @return the maximum number of date elements in the date navigator
      */
     public int getDateFacetMaxCount() {
 		return this.dateFacetMaxCount;
 	}
-    
+
     /**
      * @param dateFacetMaxCount the maximum number of date elements in the date navigator
      */
     public void setDateFacetMaxCount(final int dateFacetMaxCount) {
 		this.dateFacetMaxCount = dateFacetMaxCount;
 	}
-    
+
     /**
      * @return false when results can be extended to documents including links to documents ot contentdom type.
      */
     public boolean isStrictContentDom() {
 		return this.strictContentDom;
 	}
-    
+
     /**
      * @param strictContentDom when false, results can be extended to documents including links to documents ot contentdom type.
      */
     public void setStrictContentDom(final boolean strictContentDom) {
 		this.strictContentDom = strictContentDom;
 	}
-    
+
 	/**
 	 * @return The maximum number of suggestions ("Did you mean") to display at the
 	 *         top of the first search results page
@@ -494,12 +491,12 @@ public final class QueryParams {
         sb.append("]");
         return sb.toString();
     }
-    
+
 	/**
 	 * Check wheter the given URL matches the eventual modifier and top-level domain
 	 * constraints. Should be preferred as more accurate than the url mask pattern generated with
 	 * {@link #buildApproximateURLFilter(QueryModifier, String)}.
-	 * 
+	 *
 	 * @param modifier
 	 *            the query modifier with eventual constraints on protocoln, host
 	 *            name or file extension
@@ -568,7 +565,7 @@ public final class QueryParams {
         }
         return ret;
     }
-    
+
     protected static final boolean anymatch(final String text, final Iterator<String> keywords) {
         if (keywords == null || !keywords.hasNext()) return false;
         final SortedSet<String> textwords = (SortedSet<String>) Tokenizer.getWords(text, null).keySet();
@@ -596,7 +593,7 @@ public final class QueryParams {
 		}
         return solrQuery(getFacets, filterQueries);
     }
-    
+
     /**
      * @param getFacets when true, generate facets for fiels given in this.facetfields
      * @param filterQueries a mutable list of filter queries, initialized with filters related to content domain. Must not be null.
@@ -608,7 +605,7 @@ public final class QueryParams {
             if (!getFacets) this.cachedQuery.setFacet(false);
             return this.cachedQuery;
         }
-        
+
         // construct query
         final SolrQuery params = getBasicParams(getFacets, filterQueries);
         int rankingProfile = this.ranking.coeff_date == RankingProfile.COEFF_MAX ? 1 : (this.modifier.sitehash != null || this.modifier.sitehost != null) ? 2 : 0;
@@ -634,24 +631,24 @@ public final class QueryParams {
         }
         if (bq.length() > 0) params.setParam(DisMaxParams.BQ, bq.split("[\\r\\n]+")); // split on any sequence consisting of CR and/or LF
         if (bf.length() > 0) params.setParam("boost", bf); // a boost function extension, see http://wiki.apache.org/solr/ExtendedDisMax#bf_.28Boost_Function.2C_additive.29
-        
+
         // prepare result
         ConcurrentLog.info("Protocol", "SOLR QUERY: " + params.toString());
         this.cachedQuery = params;
         return params;
     }
-    
+
     private SolrQuery solrImageQuery(final boolean getFacets, final boolean strictContentDom) {
         if (this.cachedQuery != null) {
             this.cachedQuery.setStart(this.offset);
             if (!getFacets) this.cachedQuery.setFacet(false);
             return this.cachedQuery;
         }
-        
+
         // construct query
         final SolrQuery params = getBasicParams(getFacets, this.queryGoal.collectionImageFilterQuery(strictContentDom));
         params.setQuery(this.queryGoal.collectionImageQuery(this.modifier).toString());
-        
+
         if(!strictContentDom) {
         	// set boosts
         	StringBuilder bq = new StringBuilder();
@@ -661,13 +658,13 @@ public final class QueryParams {
         	bq.append(" OR ").append(CollectionSchema.url_file_ext_s.getSolrFieldName()).append(":\"png\"");
         	params.setParam(DisMaxParams.BQ, bq.toString());
         }
-        
+
         // prepare result
         ConcurrentLog.info("Protocol", "SOLR QUERY: " + params.toString());
         this.cachedQuery = params;
         return params;
     }
-    
+
     private SolrQuery getBasicParams(final boolean getFacets, final List<String> fqs) {
         final SolrQuery params = new SolrQuery();
         params.setParam("defType", "edismax");
@@ -681,13 +678,13 @@ public final class QueryParams {
             params.setSort(new SortClause(CollectionSchema.last_modified.getSolrFieldName(), SolrQuery.ORDER.desc));
             //params.setSortField(CollectionSchema.last_modified.getSolrFieldName(), ORDER.desc); // deprecated in Solr 4.2
         }
-        
+
         // add site facets
         fqs.addAll(getFacetsFilterQueries());
         if (fqs.size() > 0) {
             params.setFilterQueries(fqs.toArray(new String[fqs.size()]));
         }
-        
+
         // set facet query attributes
         if (getFacets && this.facetfields.size() > 0) {
             params.setFacet(true);
@@ -714,13 +711,13 @@ public final class QueryParams {
         params.setFields("*", "score"); // we need the score for post-ranking
         return params;
     }
-    
+
     long year = 1000L * 60L * 60L * 24L * 365L;
-    
+
     private List<String> getFacetsFilterQueries() {
-        
+
         ArrayList<String> fqs = new ArrayList<>();
-        
+
         // add site facets
         if (this.modifier.sitehash == null && this.modifier.sitehost == null) {
             if (this.siteexcludes != null) {
@@ -766,47 +763,47 @@ public final class QueryParams {
         if (this.modifier.collection != null && this.modifier.collection.length() > 0 && this.solrSchema.contains(CollectionSchema.collection_sxt)) {
             fqs.add(QueryModifier.parseCollectionExpression(this.modifier.collection));
         }
-        
+
         if (this.solrSchema.contains(CollectionSchema.dates_in_content_dts)) {
             if (this.modifier.on != null && this.modifier.on.length() > 0) {
                 fqs.add(QueryModifier.parseOnExpression(this.modifier.on, this.timezoneOffset));
             }
-            
+
             if (this.modifier.from != null && this.modifier.from.length() > 0 && (this.modifier.to == null || this.modifier.to.equals("*"))) {
                 fqs.add(QueryModifier.parseFromToExpression(this.modifier.from, null, this.timezoneOffset));
             }
-            
+
             if ((this.modifier.from == null || this.modifier.from.equals("*")) && this.modifier.to != null && this.modifier.to.length() > 0) {
                 fqs.add(QueryModifier.parseFromToExpression(null, this.modifier.to, this.timezoneOffset));
             }
-            
+
             if (this.modifier.from != null && this.modifier.from.length() > 0 && this.modifier.to != null && this.modifier.to.length() > 0) {
                 fqs.add(QueryModifier.parseFromToExpression(this.modifier.from, this.modifier.to, this.timezoneOffset));
             }
         }
-        
+
         if (this.modifier.protocol != null) {
             fqs.add("{!tag=" + CollectionSchema.url_protocol_s.getSolrFieldName() + "}" + CollectionSchema.url_protocol_s.getSolrFieldName() + ':' + this.modifier.protocol);
         }
-        
+
         if (this.tld != null) {
         	/* Use the host_s field which is mandatory, rather than the optional host_dnc_s field */
             fqs.add(CollectionSchema.host_s.getSolrFieldName() + ":*." + this.tld);
         }
-        
+
         if (this.modifier.filetype != null) {
             fqs.add(CollectionSchema.url_file_ext_s.getSolrFieldName() + ":\"" + this.modifier.filetype + '\"');
         }
-        
+
         if (this.inlink != null) {
             fqs.add(CollectionSchema.outboundlinks_urlstub_sxt.getSolrFieldName() + ":\"" + this.inlink + '\"');
         }
-        
+
         if (!this.urlMask_isCatchall && this.urlMaskPattern != null) {
             // add a filter query on urls only if user custom and not generated from other modifiers
             fqs.add(CollectionSchema.sku.getSolrFieldName() + ":/" + this.urlMaskString + "/");
         }
-        
+
         if (this.radius > 0.0d && this.lat != 0.0d && this.lon != 0.0d) {
             // localtion search, no special ranking
             // try http://localhost:8090/solr/select?q=*:*&fq={!bbox sfield=coordinate_p pt=50.17,8.65 d=1}
@@ -818,10 +815,10 @@ public final class QueryParams {
             fqs.add("{!bbox sfield=" + CollectionSchema.coordinate_p.getSolrFieldName() + " pt=" + Double.toString(this.lat) + "," + Double.toString(this.lon) + " d=" + GeoLocation.degreeToKm(this.radius) + "}");
             //params.setRows(Integer.MAX_VALUE);
         }
-        
+
         return fqs;
     }
-    
+
     public QueryGoal getQueryGoal() {
         return this.queryGoal;
     }
@@ -894,9 +891,9 @@ public final class QueryParams {
             context.append(this.inlink).append(asterisk);
             context.append(this.lat).append(asterisk).append(this.lon).append(asterisk).append(this.radius).append(asterisk);
             context.append(this.snippetCacheStrategy == null ? "null" : this.snippetCacheStrategy.name());
-            
+
             // Note : this.maxSuggestions search parameter do not need to be part of this id, as it has no impact on results themselves
-            
+
             String result = context.toString();
             if (anonymized) {
                 this.idCacheAnon = result;
@@ -909,7 +906,7 @@ public final class QueryParams {
 
     /**
 	 * Build a search query URL from the given parameters.
-	 * 
+	 *
 	 * @param ext extension of the servlet to request (e.g. "html", "rss", "json"...)
 	 * @param page index of the wanted page (first page is zero)
 	 * @param theQuery holds the main query parameters. Must not be null.
@@ -933,10 +930,10 @@ public final class QueryParams {
 
         return sb;
     }
-	
+
     /**
 	 * Build a search query URL from the given parameters, removing only the given single query modifier.
-	 * 
+	 *
 	 * @param ext extension of the servlet to request (e.g. "html", "rss", "json"...)
 	 * @param page index of the wanted page (first page is zero)
 	 * @param theQuery holds the main query parameters. Must not be null.
@@ -955,7 +952,7 @@ public final class QueryParams {
         sb.append("?query=");
 
         sb.append(theQuery.getQueryGoal().getQueryString(true));
-        
+
         if (!theQuery.modifier.isEmpty()) {
         	String modifierString = theQuery.modifier.toString();
         	if(StringUtils.isNotBlank(modifierToRemove)) {
@@ -969,15 +966,15 @@ public final class QueryParams {
         		sb.append("+" + modifierString.trim());
         	}
         }
-        
+
         appendNavUrlQueryParams(sb, theQuery, authenticatedFeatures);
 
         return sb.toString();
     }
-	
+
     /**
 	 * Build a search query URL with a new search query string, but keeping any already defined eventual modifiers.
-	 * 
+	 *
 	 * @param ext extension of the servlet to request (e.g. "html", "rss", "json"...)
 	 * @param page index of the wanted page (first page is zero)
 	 * @param theQuery holds the main query parameters. Must not be null.
@@ -995,11 +992,11 @@ public final class QueryParams {
         sb.append("?query=");
 
         sb.append(new QueryGoal(newQueryString).getQueryString(true));
-        
+
         if (!theQuery.modifier.isEmpty()) {
         	sb.append("+" + theQuery.modifier.toString());
         }
-        
+
         appendNavUrlQueryParams(sb, theQuery, authenticatedFeatures);
 
         return sb.toString();
@@ -1031,7 +1028,7 @@ public final class QueryParams {
         sb.append("?query=");
 
         sb.append(theQuery.getQueryGoal().getQueryString(true));
-        
+
 		if (newModifier == null) {
             if (!theQuery.modifier.isEmpty()) {
             	sb.append("+" + theQuery.modifier.toString());
@@ -1051,7 +1048,7 @@ public final class QueryParams {
                 }
             }
         }
-		
+
         appendNavUrlQueryParams(sb, theQuery, authenticatedFeatures);
 
         return sb;
@@ -1059,7 +1056,7 @@ public final class QueryParams {
 
     /**
 	 * Append search query parameters to the URL builder already filled with the beginning of the URL.
-	 * 
+	 *
 	 * @param sb the URL string builder to fill. Must not be null.
 	 * @param theQuery holds the main query parameters. Must not be null.
 	 * @param authenticatedFeatures
@@ -1077,6 +1074,9 @@ public final class QueryParams {
         sb.append("&verify=");
         sb.append(theQuery.snippetCacheStrategy == null ? "false" : theQuery.snippetCacheStrategy.toName());
 
+        sb.append("&urlmaskfilter=");
+        sb.append(theQuery.urlMaskString);
+
         sb.append("&prefermaskfilter=");
         sb.append(theQuery.prefer);
 
@@ -1087,10 +1087,10 @@ public final class QueryParams {
 
         sb.append("&contentdom=");
         sb.append(theQuery.contentdom.toString());
-        
+
         sb.append("&strictContentDom=");
         sb.append(String.valueOf(theQuery.isStrictContentDom()));
-        
+
         sb.append("&meanCount=");
         sb.append(theQuery.getMaxSuggestions());
 
@@ -1103,7 +1103,7 @@ public final class QueryParams {
 	}
 
 	/**
-	 * Remove from the URL builder any query modifiers with the same name that the new modifier 
+	 * Remove from the URL builder any query modifiers with the same name that the new modifier
 	 * @param sb
 	 *            a StringBuilder holding the search URL navigation being built.
 	 *            Must not be null and contain the URL base and the query string
@@ -1123,7 +1123,7 @@ public final class QueryParams {
 		    		sb.delete(sameModifierIndex, spaceModifierIndex + 1);
 		    	} else {
 		    		/* The matching modifier is the last : we truncate the builder */
-		        	sb.setLength(sameModifierIndex);	
+		        	sb.setLength(sameModifierIndex);
 		    	}
 		    	sameModifierIndex = sb.indexOf(newModifierKey);
 		    }

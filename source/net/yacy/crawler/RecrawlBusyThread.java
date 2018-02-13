@@ -29,10 +29,6 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
-
 import net.yacy.cora.document.encoding.ASCII;
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.federate.solr.connector.SolrConnector;
@@ -46,6 +42,8 @@ import net.yacy.kelondro.workflow.AbstractBusyThread;
 import net.yacy.search.Switchboard;
 import net.yacy.search.SwitchboardConstants;
 import net.yacy.search.schema.CollectionSchema;
+import org.apache.solr.common.SolrDocument;
+import org.apache.solr.common.SolrDocumentList;
 
 /**
  * Selects documents by a query from the local index
@@ -58,52 +56,52 @@ public class RecrawlBusyThread extends AbstractBusyThread {
 
 	/** The thread name */
     public final static String THREAD_NAME = "recrawlindex";
-    
+
     /** The default selection query */
     public static final String DEFAULT_QUERY = CollectionSchema.fresh_date_dt.getSolrFieldName()+":[* TO NOW/DAY-1DAY]";
-    
+
     /** Default value for inclusion or not of documents with a https status different from 200 (success) */
     public static final boolean DEFAULT_INCLUDE_FAILED = false;
 
     /** The current query selecting documents to recrawl */
     private String currentQuery;
-    
+
     /** flag if docs with httpstatus_i <> 200 shall be recrawled */
     private boolean includefailed;
-    
+
     private int chunkstart = 0;
     private final int chunksize;
     private final Switchboard sb;
-    
+
     /** buffer of urls to recrawl */
     private final Set<DigestURL> urlstack;
-    
+
     /** The total number of candidate URLs found for recrawl */
     private long urlsToRecrawl = 0;
-    
+
     /** Total number of URLs added to the crawler queue for recrawl */
     private long recrawledUrlsCount = 0;
-    
+
     /** Total number of URLs rejected for some reason by the crawl stacker or the crawler queue */
     private long rejectedUrlsCount = 0;
-    
+
     /** Total number of malformed URLs found */
     private long malformedUrlsCount = 0;
-    
+
     /** Total number of malformed URLs deleted from index */
     private long malformedUrlsDeletedCount = 0;
-    
+
     private String solrSortBy;
-    
+
     /** Set to true when more URLs are still to be processed */
     private boolean moreToRecrawl = true;
-    
+
     /** True when the job terminated early because an error occurred when requesting the Solr index, or the Solr index was closed */
     private boolean terminatedBySolrFailure = false;
-    
+
     /** The recrawl job start time */
     private LocalDateTime startTime;
-    
+
     /** The recrawl job end time */
     private LocalDateTime endTime;
 
@@ -118,7 +116,7 @@ public class RecrawlBusyThread extends AbstractBusyThread {
 	 */
     public RecrawlBusyThread(final Switchboard xsb, final String query, final boolean includeFailed) {
         super(3000, 1000); // set lower limits of cycle delay
-        setName(THREAD_NAME);
+        this.setName(THREAD_NAME);
         this.setIdleSleep(10*60000); // set actual cycle delays
         this.setBusySleep(2*60000);
         this.setPriority(Thread.MIN_PRIORITY);
@@ -126,12 +124,12 @@ public class RecrawlBusyThread extends AbstractBusyThread {
         this.sb = xsb;
         this.currentQuery = query;
         this.includefailed = includeFailed;
-        this.urlstack = new HashSet<DigestURL>();
+        this.urlstack = new HashSet<>();
         // workaround to prevent solr exception on existing index (not fully reindexed) since intro of schema with docvalues
         // org.apache.solr.core.SolrCore java.lang.IllegalStateException: unexpected docvalues type NONE for field 'load_date_dt' (expected=NUMERIC). Use UninvertingReader or index with docvalues.
         this.solrSortBy = null; // CollectionSchema.load_date_dt.getSolrFieldName() + " asc";
         this.chunksize = sb.getConfigInt(SwitchboardConstants.CRAWLER_THREADS_ACTIVE_MAX, 200);
-        
+
         final SolrConnector solrConnector = this.sb.index.fulltext().getDefaultConnector();
         if (solrConnector != null && !solrConnector.isClosed()) {
         	/* Ensure indexed data is up-to-date before running the main job */
@@ -154,9 +152,9 @@ public class RecrawlBusyThread extends AbstractBusyThread {
     public String getQuery() {
         return this.currentQuery;
     }
-    
+
 	/**
-	 * 
+	 *
 	 * @param queryBase
 	 *            the base query
 	 * @param includeFailed
@@ -193,7 +191,7 @@ public class RecrawlBusyThread extends AbstractBusyThread {
         int added = 0;
 
         if (!this.urlstack.isEmpty()) {
-            final CrawlProfile profile = sb.crawler.defaultRecrawlJobProfile;
+            final CrawlProfile profile = this.sb.crawler.defaultRecrawlJobProfile;
 
             for (final DigestURL url : this.urlstack) {
 				final Request request = new Request(ASCII.getBytes(this.sb.peers.mySeed().hash), url, null, "",
@@ -208,7 +206,7 @@ public class RecrawlBusyThread extends AbstractBusyThread {
                     continue;
                 }
                 final String s;
-                s = sb.crawlQueues.noticeURL.push(NoticedURL.StackType.LOCAL, request, profile, sb.robots);
+                s = this.sb.crawlQueues.noticeURL.push(NoticedURL.StackType.LOCAL, request, profile, this.sb.robots);
 
                 if (s != null) {
                 	this.rejectedUrlsCount++;
@@ -251,13 +249,13 @@ public class RecrawlBusyThread extends AbstractBusyThread {
         }
         return didSomething;
     }
-    
+
     @Override
     public synchronized void start() {
     	this.startTime = LocalDateTime.now();
     	super.start();
     }
-    
+
     @Override
     public void terminate(boolean waitFor) {
     	super.terminate(waitFor);
@@ -279,7 +277,7 @@ public class RecrawlBusyThread extends AbstractBusyThread {
         	this.terminatedBySolrFailure = true;
         	return false;
         }
-        
+
         try {
             // query all or only httpstatus=200 depending on includefailed flag
             docList = solrConnector.getDocumentListByQuery(RecrawlBusyThread.buildSelectionQuery(this.currentQuery, this.includefailed),
@@ -307,13 +305,13 @@ public class RecrawlBusyThread extends AbstractBusyThread {
             }
             this.chunkstart = this.chunkstart + this.chunksize;
         }
-        
+
         if (docList == null || docList.size() < this.chunksize) {
             return false;
         }
         return true;
     }
-    
+
 	/**
 	 * @return a new default CrawlProfile instance to be used for recrawl jobs.
 	 */
@@ -340,7 +338,7 @@ public class RecrawlBusyThread extends AbstractBusyThread {
     public int getJobCount() {
         return this.urlstack.size();
     }
-    
+
     /**
      * @return The total number of candidate URLs found for recrawl
      */
@@ -354,7 +352,7 @@ public class RecrawlBusyThread extends AbstractBusyThread {
     public long getRecrawledUrlsCount() {
 		return this.recrawledUrlsCount;
 	}
-    
+
 	/**
 	 * @return The total number of URLs rejected for some reason by the crawl
 	 *         stacker or the crawler queue
@@ -369,14 +367,14 @@ public class RecrawlBusyThread extends AbstractBusyThread {
     public long getMalformedUrlsCount() {
 		return this.malformedUrlsCount;
 	}
-    
+
 	/**
 	 * @return The total number of malformed URLs deleted from index
 	 */
     public long getMalformedUrlsDeletedCount() {
 		return this.malformedUrlsDeletedCount;
 	}
-    
+
 	/**
 	 * @return true when the job terminated early because an error occurred when
 	 *         requesting the Solr index, or the Solr index was closed
@@ -389,7 +387,7 @@ public class RecrawlBusyThread extends AbstractBusyThread {
     public LocalDateTime getStartTime() {
 		return this.startTime;
 	}
-    
+
     /** @return The recrawl job end time */
     public LocalDateTime getEndTime() {
 		return this.endTime;

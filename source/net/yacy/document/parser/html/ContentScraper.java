@@ -46,9 +46,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.swing.event.EventListenerList;
-
 import net.yacy.cora.date.ISO8601Formatter;
 import net.yacy.cora.document.id.AnchorURL;
 import net.yacy.cora.document.id.DigestURL;
@@ -61,8 +59,8 @@ import net.yacy.cora.util.ConcurrentLog;
 import net.yacy.cora.util.NumberTools;
 import net.yacy.document.SentenceReader;
 import net.yacy.document.VocabularyScraper;
-import net.yacy.document.parser.htmlParser;
 import net.yacy.document.parser.html.Evaluation.Element;
+import net.yacy.document.parser.htmlParser;
 import net.yacy.kelondro.io.CharBuffer;
 import net.yacy.kelondro.util.FileUtils;
 import net.yacy.kelondro.util.ISO639;
@@ -81,7 +79,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
     // statics: for initialization of the HTMLFilterAbstractScraper
     /** Set of tag names processed as singletons (no end tag, or not processing the eventual end tag) */
     private static final Set<String> linkTags0 = new HashSet<String>(12,0.99f);
-    
+
     /** Set of tag names processed by pairs of start and end tag */
     private static final Set<String> linkTags1 = new HashSet<String>(15,0.99f);
 
@@ -145,10 +143,10 @@ public class ContentScraper extends AbstractScraper implements Scraper {
         public String name;
         public Properties opts;
         public CharBuffer content;
-        
+
         /** Set to true when this tag should be ignored from scraping */
         private boolean ignore = false;
-        
+
         public Tag(final String name) {
             this.name = name;
             this.opts = new Properties();
@@ -178,12 +176,12 @@ public class ContentScraper extends AbstractScraper implements Scraper {
         public String toString() {
             return "<" + name + " " + opts + ">" + content + "</" + name + ">";
         }
-        
+
         /** @return true when this tag should be ignored from scraping */
         public boolean isIgnore() {
 			return this.ignore;
 		}
-        
+
         /**
          * @param ignore true when this tag should be ignored from scraping
          */
@@ -205,15 +203,15 @@ public class ContentScraper extends AbstractScraper implements Scraper {
     private final List<AnchorURL> anchors;
     private final SizeLimitedMap<DigestURL, String> rss, css;
     private final SizeLimitedMap<AnchorURL, EmbedEntry> embeds; // urlhash/embed relation
-    private final List<ImageEntry> images; 
+    private final List<ImageEntry> images;
     private final SizeLimitedSet<AnchorURL> script, frames, iframes;
-    
+
 	/**
 	 * URLs of linked data item types referenced from HTML content with standard
 	 * annotations such as RDFa, microdata, microformats or JSON-LD
 	 */
     private final SizeLimitedSet<DigestURL> linkedDataTypes;
-    
+
     private final SizeLimitedMap<String, String> metas;
     private final SizeLimitedMap<String, DigestURL> hreflang, navigation;
     private LinkedHashSet<String> titles;
@@ -227,15 +225,15 @@ public class ContentScraper extends AbstractScraper implements Scraper {
     private final EventListenerList htmlFilterEventListeners;
     private double lon, lat;
     private AnchorURL canonical, publisher;
-    
+
     /** The maximum number of URLs to process and store in the anchors property. */
     private final int maxAnchors;
-    
+
     private final VocabularyScraper vocabularyScraper;
-    
+
     /** Set of CSS class names whose matching div elements content should be ignored */
     private final Set<String> ignoreDivClassNames;
-    
+
     private final int timezoneOffset;
     private int breadcrumbs;
 
@@ -252,13 +250,13 @@ public class ContentScraper extends AbstractScraper implements Scraper {
      * evaluation scores: count appearance of specific attributes
      */
     private final Evaluation evaluationScores;
-    
+
     /** Set to true when a limit on content size scraped has been exceeded */
     private boolean contentSizeLimitExceeded;
-    
+
     /** Set to true when the maxAnchors limit has been exceeded */
     private boolean maxAnchorsExceeded;
-    
+
     /**
      * Create an ContentScraper instance
      * @param root the document root url
@@ -316,7 +314,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
         this.maxAnchorsExceeded = false;
         this.maxAnchors = maxAnchors;
     }
-    
+
     /**
      * Create an ContentScraper instance
      * @param root the document root url
@@ -324,7 +322,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
      * @param vocabularyScraper handles maps from class names to vocabulary names and from documents to a map from vocabularies to terms
      * @param timezoneOffset local time zone offset
      */
-    public ContentScraper(final DigestURL root, final int maxLinks, final Set<String> ignore_class_name, final VocabularyScraper vocabularyScraper, int timezoneOffset) {
+    public ContentScraper(final DigestURL root, final int maxLinks, final Set<String> ignore_class_name, final VocabularyScraper vocabularyScraper, final int timezoneOffset) {
         this(root, Integer.MAX_VALUE, maxLinks, ignore_class_name, vocabularyScraper, timezoneOffset);
     }
 
@@ -345,7 +343,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
         }
         int p, pl, q, s = 0;
         char[] newtext = CharacterCoding.html2unicode(new String(newtext0)).toCharArray();
-        
+
         // match evaluation pattern
         this.evaluationScores.match(Element.text, newtext);
 
@@ -420,7 +418,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
             	anchorListeners.add((ContentScraperListener)listeners[i+1]);
             }
         }
-        
+
         if(!this.maxAnchorsExceeded) {
         	int maxLinksToDetect = this.maxAnchors - this.anchors.size();
         	if(maxLinksToDetect < Integer.MAX_VALUE) {
@@ -433,7 +431,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
         		this.anchors.remove(this.anchors.size() -1);
         	}
         }
-        
+
         // append string to content
         if (!b.isEmpty()) {
             this.content.append(b);
@@ -442,12 +440,12 @@ public class ContentScraper extends AbstractScraper implements Scraper {
     }
 
     private final static Pattern protp = Pattern.compile("smb://|ftp://|http://|https://");
-    
+
     /** A regular expression pattern matching any whitespace character */
     private final static Pattern WHITESPACE_PATTERN = Pattern.compile("\\s");
-    
+
     /**
-     * Try to detect and parse absolute URLs in text (at most maxURLs) , then update the urls collection and fire anchorAdded event on listeners. Any parameter can be null. 
+     * Try to detect and parse absolute URLs in text (at most maxURLs) , then update the urls collection and fire anchorAdded event on listeners. Any parameter can be null.
      * @param text the text to parse
      * @param urls a mutable collection of URLs to fill.
      * @param listeners a collection of listeners to trigger.
@@ -464,17 +462,17 @@ public class ContentScraper extends AbstractScraper implements Scraper {
         AnchorURL url;
         final Matcher urlSchemeMatcher = protp.matcher(text);
         final Matcher whiteSpaceMatcher = WHITESPACE_PATTERN.matcher(text);
-        
+
         long detectedURLsCount = 0;
         while (offset < text.length() && detectedURLsCount < maxURLs) {
             if(!urlSchemeMatcher.find(offset)) {
             	break;
             }
             schemePosition = urlSchemeMatcher.start();
-            
+
             hasWhiteSpace = whiteSpaceMatcher.find(urlSchemeMatcher.end());
             urlString = text.substring(schemePosition, hasWhiteSpace ? whiteSpaceMatcher.start() : text.length());
-            
+
             if (urlString.endsWith(".")) {
             	urlString = urlString.substring(0, urlString.length() - 1); // remove the '.' that was appended above
             }
@@ -483,7 +481,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
             urlString = removeUnpairedBrackets(urlString, '(', ')');
             urlString = removeUnpairedBrackets(urlString, '{', '}');
            	urlString = removeUnpairedBrackets(urlString, '[', ']');
-            
+
             offset = schemePosition + urlString.length();
             try {
             	url = new AnchorURL(urlString);
@@ -500,9 +498,9 @@ public class ContentScraper extends AbstractScraper implements Scraper {
         }
         return detectedURLsCount;
     }
-    
+
     /**
-     * Try to detect and parse absolute URLs in text, then update the urls collection and fire anchorAdded event on listeners. Any parameter can be null. 
+     * Try to detect and parse absolute URLs in text, then update the urls collection and fire anchorAdded event on listeners. Any parameter can be null.
      * @param text the text to parse
      * @param urls a mutable collection of URLs to fill.
      * @param listeners a collection of listeners to trigger.
@@ -514,7 +512,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
 	/**
 	 * Analyze bracket pairs found in the string and eventually
 	 * return a truncated version of that string when one or more pairs are incomplete
-	 * 
+	 *
 	 * @param str
 	 *            the string to analyze
 	 * @param openingMark
@@ -550,7 +548,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
 				break;
 			}
 		}
-		
+
 		if (depth > 0) {
 			/* One or more unpaired opening marks : truncate at the first opening level */
 			if(lastUnpairedOpeningIndex >= 0) {
@@ -576,11 +574,11 @@ public class ContentScraper extends AbstractScraper implements Scraper {
             return null;
         }
     }
-    
+
 	/**
 	 * Parse the eventual microdata itemtype attribute of a tag and extract its
 	 * valid URL tokens when the itemscope attribute is present.
-	 * 
+	 *
 	 * @param tagAttributes parsed HTML tag attributes.
 	 * @return a set of URLs eventually empty when no itemtype attribute is present
 	 *         or when its value is not valid
@@ -613,12 +611,12 @@ public class ContentScraper extends AbstractScraper implements Scraper {
 		}
 		return types;
 	}
-    
+
     private void checkOpts(final Tag tag) {
         // vocabulary classes
         final String classprop = tag.opts.getProperty("class", EMPTY_STRING);
         this.vocabularyScraper.check(this.root, classprop, tag.content);
-        
+
         // itemprop microdata property (standard definition at https://www.w3.org/TR/microdata/#dfn-attr-itemprop)
         String itemprop = tag.opts.getProperty("itemprop");
         if (itemprop != null) {
@@ -653,12 +651,12 @@ public class ContentScraper extends AbstractScraper implements Scraper {
             }
         }
     }
-    
+
 	/**
 	 * Parses sizes icon link attribute. (see
 	 * http://www.w3.org/TR/html5/links.html#attr-link-sizes) Eventual
 	 * duplicates are removed.
-	 * 
+	 *
 	 * @param sizesAttr
 	 *            sizes attribute string, may be null
 	 * @return a set of sizes eventually empty.
@@ -686,7 +684,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
 	 * Parses a space separated tokens attribute value (see
 	 * http://www.w3.org/TR/html5/infrastructure.html#space-separated-tokens).
 	 * Eventual duplicates are removed.
-	 * 
+	 *
 	 * @param attr
 	 *            attribute string, may be null
 	 * @return a set of tokens eventually empty
@@ -701,7 +699,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
 		}
 		return tokens;
 	}
-    
+
     /**
      * Retain only icon relations (standard and non standard) from tokens .
      * @param relTokens relationship tokens (parsed from a rel attribute)
@@ -808,7 +806,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
                 	String sizesAttr = tag.opts.getProperty("sizes", EMPTY_STRING);
                 	Set<Dimension> sizes = parseSizes(sizesAttr);
                 	IconEntry icon = this.icons.get(newLink);
-                	/* There is already an icon with same URL for this document : 
+                	/* There is already an icon with same URL for this document :
                 	 * they may have different rel attribute or different sizes (multi sizes ico file) or this may be a duplicate */
                 	if(icon != null) {
                 		icon.getRel().addAll(iconRels);
@@ -993,7 +991,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
         // fire event
         this.fireScrapeTag1(tag.name, tag.opts, tag.content.getChars());
     }
-    
+
 	/**
 	 * Scraping operation applied to any kind of tag opening, being either singleton
 	 * or paired tag, not restricted to tags listed in
@@ -1009,16 +1007,16 @@ public class ContentScraper extends AbstractScraper implements Scraper {
 			this.linkedDataTypes.addAll(parseMicrodataItemType(tag.opts));
 		}
 	}
-	
+
 	@Override
 	public boolean shouldIgnoreTag(final Tag tag, final Tag parentTag) {
 		boolean ignore = false;
-		
+
         /* First, inherit ignore property from eventual parent */
 		if(parentTag != null) {
 			ignore = parentTag.ignore;
 		}
-		
+
 		/* Parent is not marked as ignored : let's check the current tag */
 		if (!ignore && this.ignoreDivClassNames != null && tag != null && TagName.div.name().equals(tag.name)) {
 			final String classAttr = tag.opts.getProperty("class", EMPTY_STRING);
@@ -1027,7 +1025,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
 		}
 		return ignore;
 	}
-    
+
     /**
      * Add an anchor to the anchors list, and trigger any eventual listener
      * @param anchor anchor to add. Must not be null.
@@ -1126,11 +1124,11 @@ public class ContentScraper extends AbstractScraper implements Scraper {
     public String[] getDd() {
         return this.dd.toArray(new String[this.dd.size()]);
     }
-    
+
     public List<Date> getStartDates() {
         return this.startDates;
     }
-    
+
     public List<Date> getEndDates() {
         return this.endDates;
     }
@@ -1159,7 +1157,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
     public int breadcrumbCount() {
         return this.breadcrumbs;
     }
-    
+
     public String getText() {
         try {
             return this.content.trim().toString();
@@ -1197,7 +1195,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
         // returns a url (String) / name (String) relation
         return this.iframes;
     }
-    
+
 	/**
 	 * @return URLs of linked data item types referenced from HTML content with standard
 	 *         annotations such as RDFa, microdata, microformats or JSON-LD
@@ -1217,11 +1215,11 @@ public class ContentScraper extends AbstractScraper implements Scraper {
     public DigestURL getPublisherLink() {
         return this.publisher;
     }
-    
+
     public Map<String, DigestURL> getHreflang() {
         return this.hreflang;
     }
-    
+
     public Map<String, DigestURL> getNavigation() {
         return this.navigation;
     }
@@ -1248,28 +1246,28 @@ public class ContentScraper extends AbstractScraper implements Scraper {
     public Map<DigestURL, IconEntry> getIcons() {
         return this.icons;
     }
-    
+
     /**
      * @return true when the limit on content size scraped has been exceeded
      */
     public boolean isContentSizeLimitExceeded() {
 		return this.contentSizeLimitExceeded;
 	}
-    
+
     /**
      * @param contentSizeLimitExceeded set to true when a limit on content size scraped has been exceeded
      */
     public void setContentSizeLimitExceeded(final boolean contentSizeLimitExceeded) {
 		this.contentSizeLimitExceeded = contentSizeLimitExceeded;
 	}
-    
+
     /**
      * @return true when the maxAnchors limit has been exceeded
      */
     public boolean isMaxAnchorsExceeded() {
 		return this.maxAnchorsExceeded;
 	}
-    
+
     /**
      * @return true when at least one limit on content size, anchors number or links number has been exceeded
      */
@@ -1279,7 +1277,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
 				|| this.hreflang.isLimitExceeded() || this.navigation.isLimitExceeded() || this.script.isLimitExceeded()
 				|| this.frames.isLimitExceeded() || this.iframes.isLimitExceeded() || this.linkedDataTypes.isLimitExceeded();
 	}
-    
+
     /*
     DC in html example:
     <meta name="DC.title" lang="en" content="Expressing Dublin Core in HTML/XHTML meta and link elements" />
@@ -1295,7 +1293,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
         if (s.indexOf("noindex",0) >= 0) return true;
         return false;
     }
-    
+
     public boolean followDenied() {
         final String s = this.metas.get("robots");
         if (s == null) return false;
@@ -1334,7 +1332,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
 
     private final static Pattern commaSepPattern = Pattern.compile(" |,");
     private final static Pattern semicSepPattern = Pattern.compile(" |;");
-    
+
     public Set<String> getContentLanguages() {
         // i.e. <meta name="DC.language" content="en" scheme="DCTERMS.RFC3066">
         // or <meta http-equiv="content-language" content="en">
@@ -1389,10 +1387,10 @@ public class ContentScraper extends AbstractScraper implements Scraper {
         if (s.toLowerCase().startsWith("url=")) return s.substring(4).trim();
         return EMPTY_STRING;
     }
-    
+
     public Date getDate() {
         String content;
-        
+
         // <meta name="date" content="YYYY-MM-DD..." />
         content = this.metas.get("date");
         if (content != null) try {return ISO8601Formatter.FORMATTER.parse(content, this.timezoneOffset).getTime();} catch (ParseException e) {}
@@ -1400,23 +1398,23 @@ public class ContentScraper extends AbstractScraper implements Scraper {
         // <meta name="DC.date.modified" content="YYYY-MM-DD" />
         content = this.metas.get("dc.date.modified");
         if (content != null) try {return ISO8601Formatter.FORMATTER.parse(content, this.timezoneOffset).getTime();} catch (ParseException e) {}
-        
+
         // <meta name="DC.date.created" content="YYYY-MM-DD" />
         content = this.metas.get("dc.date.created");
         if (content != null) try {return ISO8601Formatter.FORMATTER.parse(content, this.timezoneOffset).getTime();} catch (ParseException e) {}
-        
+
         // <meta name="DC.date" content="YYYY-MM-DD" />
         content = this.metas.get("dc.date");
         if (content != null) try {return ISO8601Formatter.FORMATTER.parse(content, this.timezoneOffset).getTime();} catch (ParseException e) {}
-        
+
         // <meta name="DC:date" content="YYYY-MM-DD" />
         content = this.metas.get("dc:date");
         if (content != null) try {return ISO8601Formatter.FORMATTER.parse(content, this.timezoneOffset).getTime();} catch (ParseException e) {}
-        
+
         // <meta http-equiv="last-modified" content="YYYY-MM-DD" />
         content = this.metas.get("last-modified");
         if (content != null) try {return ISO8601Formatter.FORMATTER.parse(content, this.timezoneOffset).getTime();} catch (ParseException e) {}
-        
+
         return new Date();
     }
 
@@ -1579,7 +1577,7 @@ public class ContentScraper extends AbstractScraper implements Scraper {
             }
         }
     }
-    
+
     /**
      * Fire addAnchor event to any listener implemening {@link ContentScraperListener} interface
      * @param url anchor url
