@@ -24,27 +24,27 @@ public enum CacheStrategy {
 
     /** Never use the cache, all content from fresh internet source. */
     NOCACHE(0),
-    
+
     /** Use the cache if the cache exists and is fresh using the
      * proxy-fresh rules.
      */
     IFFRESH(1),
-    
+
     /** Use the cache if the cache exists. Do not check freshness. Otherwise
      * use online source.
      */
     IFEXIST(2),
-    
+
     /** Never go online, use all content from cache. If no cache entry exist,
      * consider content nevertheless as available
      */
     CACHEONLY(3),
-    
+
     /** create a snippet that does not necessarily contain the searched word,
      * but has a pretty description of the content instead
      */
     NIFTY(4);
-    
+
     /** the fifth case may be that the CacheStrategy object is assigned NULL.
      * That means that no snippet creation is wanted.
      */
@@ -61,24 +61,44 @@ public enum CacheStrategy {
     }
 
     public static CacheStrategy decode(final int code) {
-        for (final CacheStrategy strategy: CacheStrategy.values()) if (strategy.code == code) return strategy;
+        for (final CacheStrategy strategy: CacheStrategy.values()) {
+            if (strategy.code == code) {
+                return strategy;
+            }
+        }
         return NOCACHE;
     }
 
     public static CacheStrategy parse(final String name) {
-        if (name == null || name.length() == 0) return null;
-        if (name.equals("nocache")) return NOCACHE;
-        if (name.equals("iffresh")) return IFFRESH;
-        if (name.equals("ifexist")) return IFEXIST;
-        if (name.equals("cacheonly")) return CACHEONLY;
-        if (name.equals("nifty")) return NIFTY;
-        if (name.equals("true")) return IFEXIST;
-        if (name.equals("false")) return null; // if this cache strategy is assigned as query attribute, null means "do not create a snippet"
+        if (name == null || name.length() == 0) {
+            return null;
+        }
+        if (name.equals("nocache")) {
+            return NOCACHE;
+        }
+        if (name.equals("iffresh")) {
+            return IFFRESH;
+        }
+        if (name.equals("ifexist")) {
+            return IFEXIST;
+        }
+        if (name.equals("cacheonly")) {
+            return CACHEONLY;
+        }
+        if (name.equals("nifty")) {
+            return NIFTY;
+        }
+        if (name.equals("true")) {
+            return IFEXIST;
+        }
+        if (name.equals("false")) {
+            return null; // if this cache strategy is assigned as query attribute, null means "do not create a snippet"
+        }
         return null;
     }
 
     public String toName() {
-        return name().toLowerCase();
+        return this.name().toLowerCase();
     }
 
     public boolean isAllowedToFetchOnline() {

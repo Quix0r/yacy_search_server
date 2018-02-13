@@ -22,7 +22,6 @@ package net.yacy.cora.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import net.yacy.cora.protocol.http.HTTPClient;
 
 /**
@@ -31,14 +30,13 @@ import net.yacy.cora.protocol.http.HTTPClient;
  *
  */
 public class HTTPInputStream extends InputStream {
-	
+
 	/** HTTP client */
 	private HTTPClient httpClient;
-	
+
 	/** Encapsulated HTTP content stream */
 	private InputStream contentStream;
-	
-	
+
 	/**
 	 * Constructs from a httpClient.
 	 * @param httpClient a httpClient with accessible stream content.
@@ -54,72 +52,71 @@ public class HTTPInputStream extends InputStream {
 			throw new IOException("content stream is null");
 		}
 	}
-	
+
 	/**
 	 * Close properly HTTP connection with httpClient
+	 * @throws java.io.IOException
 	 */
 	@Override
 	public void close() throws IOException {
-		httpClient.finish();
+		this.httpClient.finish();
 	}
 
 
 	@Override
 	public int read() throws IOException {
-		return contentStream.read();
+		return this.contentStream.read();
 	}
 
 
 	@Override
 	public int hashCode() {
-		return contentStream.hashCode();
+		return this.contentStream.hashCode();
 	}
 
 	@Override
-	public int read(byte[] b) throws IOException {
-		return contentStream.read(b);
+	public int read(final byte[] b) throws IOException {
+		return this.contentStream.read(b);
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		return contentStream.equals(obj);
+	public boolean equals(final Object obj) {
+		return this.contentStream.equals(obj);
 	}
 
 	@Override
 	public int read(byte[] b, int off, int len) throws IOException {
-		return contentStream.read(b, off, len);
+		return this.contentStream.read(b, off, len);
 	}
 
 	@Override
 	public long skip(long n) throws IOException {
-		return contentStream.skip(n);
+		return this.contentStream.skip(n);
 	}
 
 	@Override
 	public String toString() {
-		return contentStream.toString();
+		return this.contentStream.toString();
 	}
 
 	@Override
 	public int available() throws IOException {
-		return contentStream.available();
+		return this.contentStream.available();
 	}
 
 	@Override
 	public synchronized void mark(int readlimit) {
-		contentStream.mark(readlimit);
+		this.contentStream.mark(readlimit);
 	}
 
 	@Override
 	public synchronized void reset() throws IOException {
-		contentStream.reset();
+		this.contentStream.reset();
 	}
 
 	@Override
 	public boolean markSupported() {
-		return contentStream.markSupported();
+		return this.contentStream.markSupported();
 	}
-	
-	
 
 }

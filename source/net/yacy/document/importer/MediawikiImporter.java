@@ -51,7 +51,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.zip.GZIPInputStream;
-
 import net.yacy.cora.document.encoding.UTF8;
 import net.yacy.cora.document.id.AnchorURL;
 import net.yacy.cora.document.id.DigestURL;
@@ -69,7 +68,6 @@ import net.yacy.document.TextParser;
 import net.yacy.document.VocabularyScraper;
 import net.yacy.document.content.SurrogateReader;
 import net.yacy.kelondro.util.NamePrefixThreadFactory;
-
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 
@@ -307,7 +305,7 @@ public class MediawikiImporter extends Thread implements Importer {
     public static class indexMaker extends Thread {
 
         File mediawikixml;
-        
+
         public indexMaker(final File mediawikixml) {
         	super("MediawikiImporter.indexMaker " + mediawikixml != null ? mediawikixml.getName() : "");
             this.mediawikixml = mediawikixml;

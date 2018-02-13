@@ -1,10 +1,5 @@
 package net.yacy.crawler;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -16,9 +11,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
-
-import org.junit.Test;
-
 import net.yacy.cora.document.encoding.ASCII;
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.federate.yacy.CacheStrategy;
@@ -37,15 +29,20 @@ import net.yacy.kelondro.data.word.Word;
 import net.yacy.kelondro.index.RowHandleSet;
 import net.yacy.kelondro.util.FileUtils;
 import net.yacy.search.SwitchboardConstants;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
 public class HostBalancerTest {
 
     private static final File QUEUES_ROOT = new File("test/DATA/INDEX/QUEUES");
     private static final File DATA_DIR = new File("test/DATA");
-    
+
     private static final boolean EXCEED_134217727 = true;
     private static final int ON_DEMAND_LIMIT = 1000;
-    
+
     /**
      * Test of reopen existing HostBalancer cache to test/demonstrate issue with
      * HostQueue for file: protocol
@@ -108,14 +105,14 @@ public class HostBalancerTest {
         hb.close();
 
     }
-    
+
 	/**
 	 * A test task performing some operations to be profiled on the HostBalancer. To
 	 * run concurrently.
-	 * 
+	 *
 	 */
 	private static class ProfilingTask extends Thread {
-		
+
 		private static final CrawlProfile CRAWL_PROFILE = new CrawlProfile(
 				CrawlSwitchboard.CRAWL_PROFILE_SNIPPET_GLOBAL_TEXT, CrawlProfile.MATCH_ALL_STRING, // crawlerUrlMustMatch
 				CrawlProfile.MATCH_NEVER_STRING, // crawlerUrlMustNotMatch
@@ -132,10 +129,10 @@ public class HostBalancerTest {
 				true, true, true, false, -1, false, true, CrawlProfile.MATCH_NEVER_STRING, CacheStrategy.IFEXIST,
 				"robot_" + CrawlSwitchboard.CRAWL_PROFILE_SNIPPET_GLOBAL_TEXT,
 				ClientIdentification.yacyIntranetCrawlerAgentName, null, null, 0);
-		
+
 		/** RobotsTxt instance */
 		private final RobotsTxt robots;
-		
+
 		/** The HostBalancer instance target */
 		private final HostBalancer balancer;
 
@@ -150,7 +147,7 @@ public class HostBalancerTest {
 
 		/** Sleep time (in milliseconds) between each operation */
 		private final long sleepTime;
-		
+
 		/** Number of HostBalancer.push() failures */
 		private int pushFailures;
 
@@ -219,7 +216,6 @@ public class HostBalancerTest {
 						final byte[] urlHash = url.hash();
 						final Request req = new Request(ASCII.getBytes("testPeer"), url, null, "", new Date(),
 								CRAWL_PROFILE.handle(), 0, CRAWL_PROFILE.timezoneOffset());
-						
 
 						/* Measure push() */
 						time = System.nanoTime();
@@ -231,7 +227,7 @@ public class HostBalancerTest {
 							this.pushFailures++;
 						}
 						time = (System.nanoTime() - time);
-						
+
 						this.pushTime += time;
 						this.maxPushTime = Math.max(time, this.maxPushTime);
 
@@ -241,7 +237,7 @@ public class HostBalancerTest {
 						time = System.nanoTime();
 						this.balancer.has(urlHash);
 						time = (System.nanoTime() - time);
-						
+
 						this.hasTime += time;
 						this.maxHasTime = Math.max(time, this.maxHasTime);
 
@@ -258,12 +254,12 @@ public class HostBalancerTest {
 			            final HandleSet urlHashes = new RowHandleSet(Word.commonHashLength, Base64Order.enhancedCoder, 1);
 			            try {
 							urlHashes.put(urlHash);
-							
+
 							/* Measure remove() operation */
 							time = System.nanoTime();
 							this.balancer.remove(urlHashes);
 							time = (System.nanoTime() - time);
-							
+
 							this.removeTime += time;
 							this.maxRemoveTime = Math.max(time, this.maxRemoveTime);
 						} catch (final SpaceExceededException e) {
@@ -274,9 +270,9 @@ public class HostBalancerTest {
 						sleep();
 					}
 				}
-			} catch (MalformedURLException e) {
+			} catch (final MalformedURLException e) {
 				e.printStackTrace();
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				e.printStackTrace();
 			}
 		}
@@ -318,7 +314,7 @@ public class HostBalancerTest {
 
 	/**
 	 * Run a stress test on the HostBalancer
-	 * 
+	 *
 	 * @param args
 	 *            main arguments
 	 * @throws IOException
@@ -333,7 +329,7 @@ public class HostBalancerTest {
 		 */
 		LogManager.getLogManager()
 				.readConfiguration(new ByteArrayInputStream(".level=WARNING".getBytes(StandardCharsets.ISO_8859_1)));
-		
+
 		/* Main control parameters. Modify values for different scenarios. */
 
 		/* Number of concurrent test tasks */
@@ -344,10 +340,10 @@ public class HostBalancerTest {
 		final int urlsPerThread = 5;
 		/* Sleep time between each measured operation on the balancer */
 		final long sleepTime = 0;
-		
+
 		final RobotsTxt robots = new RobotsTxt(new WorkTables(DATA_DIR), null,
 				SwitchboardConstants.ROBOTS_TXT_THREADS_ACTIVE_MAX_DEFAULT);
-		
+
         FileUtils.deletedelete(QUEUES_ROOT);
 
         final HostBalancer hb = new HostBalancer(QUEUES_ROOT, ON_DEMAND_LIMIT, EXCEED_134217727, false);
@@ -429,9 +425,9 @@ public class HostBalancerTest {
 			} finally {
 				/* Shutdown running threads */
 				ArrayStack.shutdownDeleteService();
-				
+
 				robots.close();
-				
+
 				try {
 					Domains.close();
 				} finally {
