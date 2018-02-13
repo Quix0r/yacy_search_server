@@ -39,7 +39,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.protocol.ClientIdentification;
 import net.yacy.cora.protocol.RequestHeader;
@@ -116,8 +115,7 @@ public class ConfigLanguage_p {
                         		bw.write(it.next() + "\n");
                         	}
                         }
-                        
-                        
+
                         // convert downloaded xliff to internal lng file
                         final String ext = Files.getFileExtension(langFile.getName());
                         if (ext.equalsIgnoreCase("xlf") || ext.equalsIgnoreCase("xliff")) {
@@ -125,14 +123,14 @@ public class ConfigLanguage_p {
                             langFile = new File(langPath, Files.getNameWithoutExtension(langFile.getName())+".lng");
                             tx.saveAsLngFile(null, langFile, lng);
                         }
-                        
+
                         if (post.containsKey("use_lang") && "on".equals(post.get("use_lang"))) {
                             tx.changeLang(env, langPath, langFile.getName());
                         }
                     } catch (final IOException e) {
                         prop.put("status", "2");//error saving the language file
                     }
-                } catch(final IOException e) {
+                } catch(final IOException | IllegalAccessException e) {
                     prop.put("status", "1");//unable to get url
                     prop.put("status_url", url);
                 }
@@ -153,7 +151,7 @@ public class ConfigLanguage_p {
         prop.put("langlist_1_name", ((langNames.get("default") == null) ? "default" : langNames.get("default")));
         prop.put("langlist_1_selected", sellang.equals("default") ? "selected=\"selected\"":" ");
         int count = 2; //+2 because of the virtual entry "browser" and "default" at top
-        for (final String langFile : langFiles) {  
+        for (final String langFile : langFiles) {
             final String langKey = langFile.substring(0, langFile.length() -4);
             final String langName = langNames.get(langKey);
             prop.put("langlist_" + (count) + "_file", langFile);

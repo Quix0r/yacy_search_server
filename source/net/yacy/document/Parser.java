@@ -25,10 +25,8 @@ package net.yacy.document;
 
 import java.io.InputStream;
 import java.util.Set;
-
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.document.id.MultiProtocolURL;
-import net.yacy.document.Parser.Failure;
 
 public interface Parser {
 
@@ -57,24 +55,24 @@ public interface Parser {
      * @throws InterruptedException when the processing was interrupted before termination
      */
     public Document[] parse(
-            DigestURL url,
-            String mimeType,
-            String charset,
-            VocabularyScraper scraper,
-            int timezoneOffset,
-            InputStream source
+            final DigestURL url,
+            final String mimeType,
+            final String charset,
+            final VocabularyScraper scraper,
+            final int timezoneOffset,
+            final InputStream source
             ) throws Parser.Failure, InterruptedException;
-    
+
     public Document[] parse(
-            DigestURL url,
-            String mimeType,
-            String charset,
-            Set<String> ignore_class_name,
-            VocabularyScraper scraper,
-            int timezoneOffset,
-            InputStream source
+            final DigestURL url,
+            final String mimeType,
+            final String charset,
+            final Set<String> ignore_class_name,
+            final VocabularyScraper scraper,
+            final int timezoneOffset,
+            final InputStream source
             ) throws Parser.Failure, InterruptedException;
-    
+
     /**
 	 * Parse an input stream, eventually terminating processing when a total of
 	 * maxLinks URLS (anchors, images links, media links...) have been reached,
@@ -85,7 +83,7 @@ public interface Parser {
 	 * limits : make sure to check this by calling fist
 	 * {@link #isParseWithLimitsSupported()}, or a UnsupportedOperationException
 	 * could be thrown.
-	 * 
+	 *
 	 * @param url
 	 *            the URL of the source
 	 * @param mimeType
@@ -180,5 +178,3 @@ public interface Parser {
         }
     }
 }
-
-
