@@ -25,7 +25,7 @@ if [ ! -x "$JAVA" ]
 then
 	echo "The java command is not executable."
 	echo "Either you have not installed java or it is not in your PATH"
-	#Cron supports setting the path in 
+	#Cron supports setting the path in
 	#echo "Has this script been invoked by CRON?"
 	#echo "if so, please set PATH in the crontab, or set the correct path in the variable in this script."
 	exit 1
@@ -54,7 +54,7 @@ then
 		then
 			echo "WARNING: Unfortunately this script does not support long options in $OS."
 		fi
-		
+
         options="`getopt hdlptsg: $*`"
 else
         options="`getopt -n YaCy -o h,d,l,p,t,s,g -l help,debug,logging,print-out,tail-log,startup,gui -- $@`"
@@ -77,11 +77,11 @@ GUI=0
 for option in $options;do
 	if [ $isparameter -ne 1 ];then #option
 		case $option in
-			-h|--help) 
+			-h|--help)
 				usage
 				exit 3
 				;;
-			-l|--logging) 
+			-l|--logging)
 				LOGGING=1
 				if [ $DEBUG -eq 1 ];then
 					echo "can not combine -l and -d"
@@ -111,7 +111,7 @@ for option in $options;do
 				GUI=1
 				isparameter=1
 				;;
-		esac #case option 
+		esac #case option
 	else #parameter
 		if [ $option = "--" ];then #option / parameter separator
 			isparameter=1;
@@ -128,8 +128,8 @@ done
 
 #echo $options;exit 0 #DEBUG for getopts
 
-#check if Linux system supports large memory pages or if OS is Solaris which 
-#supports large memory pages since version 9 
+#check if Linux system supports large memory pages or if OS is Solaris which
+#supports large memory pages since version 9
 #(according to http://java.sun.com/javase/technologies/hotspot/largememory.jsp)
 ENABLEHUGEPAGES=0;
 
@@ -137,7 +137,7 @@ if [ $OS = "Linux" ]
 then
     HUGEPAGESTOTAL="`cat /proc/meminfo | grep HugePages_Total | sed s/[^0-9]//g`"
     if [ -n "$HUGEPAGESTOTAL" ] && [ $HUGEPAGESTOTAL -ne 0 ]
-    then 
+    then
         ENABLEHUGEPAGES=1
     fi
     # the G1 GC is on by default in Java7, so we try that here as well
@@ -148,7 +148,7 @@ then
 	# It was reported that the same option causes good performance on solaris.
     JAVA_ARGS="$JAVA_ARGS -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode"
     ENABLEHUGEPAGES=1
-fi 
+fi
 
 #turn on support for large memory pages if supported by OS
 if [ $ENABLEHUGEPAGES -eq 1 ]
@@ -157,30 +157,29 @@ then
 fi
 
 #turn on MMap for Solr if OS is a 64bit OS
-if [ -n "`uname -m | grep 64`" ]; then JAVA_ARGS="$JAVA_ARGS -Dsolr.directoryFactory=solr.MMapDirectoryFactory"; fi
+if [ -n "`uname -m | grep 64`" ]
+then
+	JAVA_ARGS="$JAVA_ARGS -Dsolr.directoryFactory=solr.MMapDirectoryFactory";
+fi
 
 if [ ! -f $CONFIGFILE -a -f DATA/SETTINGS/httpProxy.conf ]
 then
 	# old config if new does not exist
 	CONFIGFILE="DATA/SETTINGS/httpProxy.conf"
 fi
+
 if [ -f $CONFIGFILE ]
 then
 	# startup memory
 	for i in Xmx Xms; do
 		j="`grep javastart_$i $CONFIGFILE | sed 's/^[^=]*=//'`";
-		if [ -n $j ]; then JAVA_ARGS="-$j $JAVA_ARGS"; fi;
+
+		if [ -n $j ]; then
+			JAVA_ARGS="-$j $JAVA_ARGS";
+		fi
 	done
-	
-	# Priority
-	j="`grep javastart_priority $CONFIGFILE | sed 's/^[^=]*=//'`";
 
-	if [ ! -z "$j" ];then
-		if [ -n $j ]; then JAVA="nice -n $j $JAVA"; fi;
-	fi
-
-        PORT="`grep ^port= $CONFIGFILE | sed 's/^[^=]*=//'`";
-	
+	PORT="`grep ^port= $CONFIGFILE | sed 's/^[^=]*=//'`";
 #	for i in `grep javastart $CONFIGFILE`;do
 #		i="${i#javastart_*=}";
 #		JAVA_ARGS="-$i $JAVA_ARGS";
@@ -195,10 +194,16 @@ fi
 
 # generating the proper classpath
 CLASSPATH=""
-for N in lib/*.jar; do CLASSPATH="$CLASSPATH$N:"; done
+for N in lib/*.jar; do
+	if [ "${N}" = "lib/yacycore.jar" ]
+	then
+		continue
+	fi
+	CLASSPATH="${CLASSPATH}${N}:"
+done
 CLASSPATH=".:$CLASSPATH"
 
-cmdline="$JAVA $JAVA_ARGS -classpath $CLASSPATH net.yacy.yacy";
+cmdline="$JAVA_ARGS -classpath $CLASSPATH -jar lib/yacycore.jar";
 
 if [ $STARTUP -eq 1 ] #startup
 then
@@ -226,11 +231,19 @@ else
 	echo "*******************************************************************************"
 	if [ $DEBUG -eq 1 ] #debug
 	then
-		# with exec the java process become the main process and will receive signals such as SIGTERM
-		exec $cmdline
+		# Priority
+		j="`grep javastart_priority $CONFIGFILE | sed 's/^[^=]*=//'`";
+
+		if [ ! -z "$j" -a -n "$j" ]; then
+			# with exec the java process become the main process and will receive signals such as SIGTERM
+			exec nice --adjustment="$j" "$JAVA" $cmdline
+		else
+			# with exec the java process become the main process and will receive signals such as SIGTERM
+			exec "$JAVA" $cmdline
+		fi
 	else
 		echo " >> YaCy started as daemon process. Administration at http://localhost:$PORT << "
-		eval $cmdline
+		eval "\"$JAVA\" $cmdline"
 		if [ "$TAILLOG" -eq "1" -a ! "$DEBUG" -eq "1" ];then
 			sleep 1
 			tail -f DATA/LOG/yacy00.log

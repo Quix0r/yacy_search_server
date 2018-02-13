@@ -186,7 +186,7 @@
     	<pathelement location="${lib}/commons-logging-1.2.jar" />
     	<pathelement location="${lib}/commons-math3-3.4.1.jar" />
     	<pathelement location="${lib}/fontbox-2.0.8.jar" />
-        <pathelement location="${lib}/guava-18.0.jar" />
+        <pathelement location="${lib}/guava-14.0.1.jar" />
         <pathelement location="${lib}/htmllexer.jar" />
         <pathelement location="${lib}/httpclient-4.5.5.jar" />
         <pathelement location="${lib}/httpcore-4.4.9.jar" />

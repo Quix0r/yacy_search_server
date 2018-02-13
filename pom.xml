@@ -34,11 +34,11 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <!-- the Solr version used in dependency section for all related dependencies -->
-        <solr.version>6.6.2</solr.version> 
+        <solr.version>6.6.2</solr.version>
         <!-- the Jetty version used in dependency section for all related dependencies -->
         <jetty.version>9.4.8.v20171121</jetty.version>
-                
-        <!-- properties used for filtering yacyBuildProperties.java -->       
+
+        <!-- properties used for filtering yacyBuildProperties.java -->
         <REPL_DATE>${DSTAMP}</REPL_DATE>
         <REPL_RELEASE>yacy_v${project.version}_${DSTAMP}_${releaseNr}.tar.gz</REPL_RELEASE>
         <REPL_VERSION>${project.version}</REPL_VERSION>
@@ -58,7 +58,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
-                <version>2.6</version>                
+                <version>2.6</version>
                 <configuration>
                     <warSourceDirectory>htroot</warSourceDirectory>
                 </configuration>
@@ -77,9 +77,10 @@
                         thus it is excluded here to prevent Maven compile error "duplicate source"
                         -->
                         <exclude>net/yacy/peers/operation/*.java</exclude>
-                    </excludes>  
+                    </excludes>
                     <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>          
+                    <target>${maven.compiler.target}</target>
+                    <showDeprecation>true</showDeprecation>
                 </configuration>
             </plugin>
 
@@ -95,9 +96,9 @@
                             <addClasspath>true</addClasspath>
                         </manifest>
                         <manifestEntries>
-                            <Implementation-Build>${project.version}-${releaseNr}</Implementation-Build>          
+                            <Implementation-Build>${project.version}-${releaseNr}</Implementation-Build>
                         </manifestEntries>
-                    </archive>                    
+                    </archive>
                 </configuration>
             </plugin>
 
@@ -134,7 +135,7 @@
                                 <javac fork="true"  srcdir="htroot"
                                        excludes="processing/**"
                                        source="${maven.compiler.source}" target="${maven.compiler.target}"
-                                       debug="true" debuglevel="lines,vars,source" 
+                                       debug="true" debuglevel="lines,vars,source"
                                        includeantruntime="false" encoding="UTF-8">
                                     <classpath refid="maven.compile.classpath"/>
                                     <compilerarg value="-Xlint"/>
@@ -166,7 +167,7 @@
                     <failOnError>false</failOnError>
                 </configuration>
             </plugin>
-            
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>templating-maven-plugin</artifactId>
@@ -177,19 +178,19 @@
                         <goals>
                             <goal>filter-sources</goal>
                         </goals>
-                        <configuration>              
-                            <!-- sourceDirectory should be a separate template directory like  
-                                 <sourceDirectory>${basedir}/libbuild/java-templates</sourceDirectory> 
-                              to not duplicate the yacyBuildProperties.java we use the original files as sourceDirectory 
+                        <configuration>
+                            <!-- sourceDirectory should be a separate template directory like
+                                 <sourceDirectory>${basedir}/libbuild/java-templates</sourceDirectory>
+                              to not duplicate the yacyBuildProperties.java we use the original files as sourceDirectory
                               (to be compatible with the ant build.xml,
-                              but it should be changed in future for both build systems to use a templateDirectory, 
+                              but it should be changed in future for both build systems to use a templateDirectory,
                               to eliminate the need of special compiler excludes
-                            -->                            
+                            -->
                             <sourceDirectory>${basedir}/source/net/yacy/peers/operation</sourceDirectory>
                             <outputDirectory>${project.build.directory}/generated-sources/java/net/yacy/peers/operation</outputDirectory>
-                  
+
                         </configuration>
-                    </execution> 
+                    </execution>
                 </executions>
             </plugin>
 
@@ -241,8 +242,8 @@
 			</activation>
     		<build>
     			<plugins>
-            		<!-- custom plugin to add YaCy release number from local Git clone 
-            		sets property <releaseNr>9nnn</releasNr> <DSTAMP>yyyyMMdd</DSTAMP> 
+            		<!-- custom plugin to add YaCy release number from local Git clone
+            		sets property <releaseNr>9nnn</releasNr> <DSTAMP>yyyyMMdd</DSTAMP>
             		! run sub project in libbuild to install the plugin ! -->
             		<plugin>
                 		<groupId>net.yacy</groupId>
@@ -254,12 +255,12 @@
                         		<goals>
                             		<goal>create</goal>
                         		</goals>
-                        		<!-- optional parameter to set/change the propertyName 
-                        		<configuration> 
+                        		<!-- optional parameter to set/change the propertyName
+                        		<configuration>
                             		<branchPropertyName>branch</branchPropertyName>
-                            		<buildNumberPropertyName>releasNr</buildNumberPropertyName> 
-                            		<commitDatePropertyName>DSTAMP</commitDatePropertyName> 
-                        		</configuration> 
+                            		<buildNumberPropertyName>releasNr</buildNumberPropertyName>
+                            		<commitDatePropertyName>DSTAMP</commitDatePropertyName>
+                        		</configuration>
                         		-->
                     		</execution>
                 		</executions>
@@ -305,7 +306,7 @@
                 </plugins>
             </build>
         </profile>
-                
+
         <profile>
             <id>report</id>
             <build>
@@ -327,7 +328,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-project-info-reports-plugin</artifactId>
                         <version>2.9</version>
-                    </plugin>                    
+                    </plugin>
                 </plugins>
             </build>
             <reporting>
@@ -359,7 +360,7 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcmail-jdk15</artifactId>
             <version>1.46</version>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
@@ -382,7 +383,7 @@
             <artifactId>commons-io</artifactId>
             <version>2.6</version>
             <type>jar</type>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>commons-jxpath</groupId>
             <artifactId>commons-jxpath</artifactId>
@@ -432,13 +433,13 @@
             <artifactId>imageio-bmp</artifactId>
             <version>3.3.2</version>
             <type>jar</type>
-        </dependency> 
+        </dependency>
         <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-tiff</artifactId>
             <version>3.3.2</version>
             <type>jar</type>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>org</groupId>
             <artifactId>jaudiotagger</artifactId>
@@ -448,7 +449,7 @@
             <groupId>net.sourceforge.jchardet</groupId>
             <artifactId>jchardet</artifactId>
             <version>1.0</version>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>org.samba.jcifs</groupId>
             <artifactId>jcifs</artifactId>
@@ -457,7 +458,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
-            <version>1.7.21</version>
+            <version>1.7.24</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -482,18 +483,18 @@
             <artifactId>jwat-warc</artifactId>
             <version>1.1.0</version>
             <type>jar</type>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>com.youcruit.com.cybozu.labs</groupId>
             <artifactId>langdetect</artifactId>
             <version>1.1.2-20151117</version>
-        </dependency>          
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>log4j-over-slf4j</artifactId>
             <version>1.7.24</version>
             <type>jar</type>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>com.drewnoakes</groupId>
             <artifactId>metadata-extractor</artifactId>
@@ -527,7 +528,7 @@
             <groupId>sax</groupId>
             <artifactId>sax</artifactId>
             <version>2.0.1</version>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-solrj</artifactId>
@@ -542,7 +543,7 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
             <version>${jetty.version}</version>
-        </dependency>      
+        </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlet</artifactId>
@@ -552,7 +553,7 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-servlets</artifactId>
             <version>${jetty.version}</version>
-        </dependency>    
+        </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
@@ -606,14 +607,14 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
-            <version>1.7.21</version>
+            <version>1.7.24</version>
             <type>jar</type>
-        </dependency>       
+        </dependency>
         <dependency>
             <groupId>org.bitlet</groupId>
             <artifactId>weupnp</artifactId>
             <version>0.1.4</version>
-        </dependency>       
+        </dependency>
 
         <!-- special setup for dependencies not found in maven repository
         to installed in local repository -->
