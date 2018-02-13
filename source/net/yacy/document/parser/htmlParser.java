@@ -24,6 +24,7 @@
 
 package net.yacy.document.parser;
 
+import com.ibm.icu.text.CharsetDetector;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -40,11 +41,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Set;
-
-import org.apache.commons.io.IOUtils;
-
-import com.ibm.icu.text.CharsetDetector;
-
 import net.yacy.cora.document.encoding.UTF8;
 import net.yacy.cora.document.id.DigestURL;
 import net.yacy.cora.document.id.MultiProtocolURL;
@@ -58,6 +54,7 @@ import net.yacy.document.parser.html.ContentScraper;
 import net.yacy.document.parser.html.ImageEntry;
 import net.yacy.document.parser.html.ScraperInputStream;
 import net.yacy.document.parser.html.TransformerWriter;
+import org.apache.commons.io.IOUtils;
 
 
 public class htmlParser extends AbstractParser implements Parser {
@@ -109,25 +106,25 @@ public class htmlParser extends AbstractParser implements Parser {
 
         return parseWithLimits(location, mimeType, documentCharset, new HashSet<String>(), vocscraper, timezoneOffset, sourceStream, Integer.MAX_VALUE, DEFAULT_MAX_LINKS, Long.MAX_VALUE);
     }
-    
+
     @Override
     public Document[] parse(
             final DigestURL location,
             final String mimeType,
             final String documentCharset,
-            final Set<String> ignore_class_name, 
+            final Set<String> ignore_class_name,
             final VocabularyScraper vocscraper,
             final int timezoneOffset,
             final InputStream sourceStream) throws Parser.Failure, InterruptedException {
 
         return parseWithLimits(location, mimeType, documentCharset, ignore_class_name, vocscraper, timezoneOffset, sourceStream, Integer.MAX_VALUE, DEFAULT_MAX_LINKS, Long.MAX_VALUE);
     }
-    
+
     @Override
     public boolean isParseWithLimitsSupported() {
     	return true;
     }
-    
+
     @Override
     public Document[] parseWithLimits(final DigestURL location, final String mimeType, final String documentCharset,
     		final Set<String> ignore_class_name, final VocabularyScraper vocscraper,
@@ -135,7 +132,7 @@ public class htmlParser extends AbstractParser implements Parser {
     		throws Failure {
         return parseWithLimits(location, mimeType, documentCharset, ignore_class_name, vocscraper, timezoneOffset, sourceStream, maxLinks, maxLinks, maxBytes);
     }
-    
+
     private Document[] parseWithLimits(final DigestURL location, final String mimeType, final String documentCharset, final Set<String> ignore_class_name, final VocabularyScraper vocscraper,
     		final int timezoneOffset, final InputStream sourceStream, final int maxAnchors, final int maxLinks, final long maxBytes)
     		throws Failure {
@@ -166,8 +163,6 @@ public class htmlParser extends AbstractParser implements Parser {
             throw new Parser.Failure("IOException in htmlParser: " + e.getMessage(), location);
         }
     }
-    
-    
 
     /**
      *  the transformScraper method transforms a scraper object into a document object
@@ -216,7 +211,7 @@ public class htmlParser extends AbstractParser implements Parser {
         ppd.setIcons(scraper.getIcons());
         ppd.setLinkedDataTypes(scraper.getLinkedDataTypes());
         ppd.setPartiallyParsed(scraper.isLimitsExceeded());
-        
+
         return ppd;
     }
 
@@ -236,11 +231,12 @@ public class htmlParser extends AbstractParser implements Parser {
         }
         return scraper;
     }
-    
+
     /**
      * Parse the resource at location and return the resulting ContentScraper
      * @param location the URL of the resource to parse
      * @param documentCharset the document charset name if known
+     * @param ignore_class_name Ignored class names
      * @param vocabularyScraper a vocabulary scraper
      * @param detectedcharsetcontainer a mutable array of Charsets : filled with the charset detected when parsing
      * @param timezoneOffset the local time zone offset
@@ -263,7 +259,7 @@ public class htmlParser extends AbstractParser implements Parser {
             final int maxAnchors,
             final int maxLinks,
             final long maxBytes) throws Parser.Failure, IOException {
-    	
+
         // make a scraper
         String charset = null;
 
@@ -302,13 +298,11 @@ public class htmlParser extends AbstractParser implements Parser {
         } else {
             try {
                 detectedcharsetcontainer[0] = Charset.forName(charset);
-            } catch (final IllegalCharsetNameException e) {
-                detectedcharsetcontainer[0] = Charset.defaultCharset();
-            } catch (final UnsupportedCharsetException e) {
+            } catch (final IllegalCharsetNameException | UnsupportedCharsetException e) {
                 detectedcharsetcontainer[0] = Charset.defaultCharset();
             }
         }
-        
+
         // parsing the content
         // for this static method no need to init local this.scraperObject here
         final ContentScraper scraper = new ContentScraper(location, maxAnchors, maxLinks, ignore_class_name, vocabularyScraper, timezoneOffset);
@@ -489,9 +483,7 @@ public class htmlParser extends AbstractParser implements Parser {
             e.printStackTrace();
         } catch (final IOException e) {
             e.printStackTrace();
-        } catch (final Parser.Failure e) {
-            e.printStackTrace();
-        } catch (final InterruptedException e) {
+        } catch (final Parser.Failure | InterruptedException | IllegalAccessException e) {
             e.printStackTrace();
         }
         System.exit(0);

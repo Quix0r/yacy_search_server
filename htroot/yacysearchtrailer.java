@@ -28,7 +28,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-
 import net.yacy.cora.date.AbstractFormatter;
 import net.yacy.cora.document.analysis.Classification.ContentDomain;
 import net.yacy.cora.document.id.MultiProtocolURL;
@@ -51,46 +50,46 @@ import net.yacy.search.query.SearchEventType;
 import net.yacy.server.serverObjects;
 import net.yacy.server.serverSwitch;
 
-
 public class yacysearchtrailer {
 
     private static final int TOPWORDS_MAXCOUNT = 16;
     private static final int TOPWORDS_MINSIZE = 8;
     private static final int TOPWORDS_MAXSIZE = 22;
 
-    @SuppressWarnings({ })
+    @SuppressWarnings({})
     public static serverObjects respond(final RequestHeader header, final serverObjects post, final serverSwitch env) {
-		if (post == null) {
-			throw new TemplateMissingParameterException("The eventID parameter is required");
-		}
-    	
+        if (post == null) {
+            throw new TemplateMissingParameterException("The eventID parameter is required");
+        }
+
         final serverObjects prop = new serverObjects();
         final Switchboard sb = (Switchboard) env;
         final String eventID = post.get("eventID", "");
-        
+
         final boolean adminAuthenticated = sb.verifyAuthentication(header);
-        
+
         final UserDB.Entry user = sb.userDB != null ? sb.userDB.getUser(header) : null;
-		final boolean authenticated = adminAuthenticated || user != null;
-        
-		if (post.containsKey("auth") && !authenticated) {
-			/*
+        final boolean authenticated = adminAuthenticated || user != null;
+
+        if (post.containsKey("auth") && !authenticated) {
+            /*
 			 * Authenticated search is explicitely requested here
 			 * but no authentication is provided : ask now for authentication.
-             * Wihout this, after timeout of HTTP Digest authentication nonce, browsers no more send authentication information 
+             * Wihout this, after timeout of HTTP Digest authentication nonce, browsers no more send authentication information
              * and as this page is not private, protected features would simply be hidden without asking browser again for authentication.
              * (see mantis 766 : http://mantis.tokeek.de/view.php?id=766) *
-			 */
-			prop.authenticationRequired();
-			return prop;
-		}
-        
+             */
+            prop.authenticationRequired();
+            return prop;
+        }
+
         final boolean clustersearch = sb.isRobinsonMode() && sb.getConfig(SwitchboardConstants.CLUSTER_MODE, "").equals(SwitchboardConstants.CLUSTER_MODE_PUBLIC_CLUSTER);
         final boolean indexReceiveGranted = sb.getConfigBool(SwitchboardConstants.INDEX_RECEIVE_ALLOW_SEARCH, true) || clustersearch;
         boolean p2pmode = sb.peers != null && sb.peers.sizeConnected() > 0 && indexReceiveGranted;
-        boolean global = post == null || (!post.get("resource-switch", post.get("resource", "global")).equals("local") && p2pmode);
+        boolean global = (!post.get("resource-switch", post.get("resource", "global")).equals("local") && p2pmode);
         boolean stealthmode = p2pmode && !global;
-        prop.put("resource-select", !adminAuthenticated ? 0 : stealthmode ? 2 : global ? 1 : 0);
+        prop.put("show-resource-select-switches", sb.getConfigBool("search.show.resource.select.switches", true) ? 1 : 0);
+        prop.put("show-resource-select-switches_resource-select", !adminAuthenticated ? 0 : stealthmode ? 2 : global ? 1 : 0);
         // find search event
         final SearchEvent theSearch = SearchEventCache.getEvent(eventID);
         if (theSearch == null) {
@@ -98,28 +97,30 @@ public class yacysearchtrailer {
             return prop;
         }
         final RequestHeader.FileType fileType = header.fileType();
-        
+
         /* Add information about the current navigators generation (number of updates since their initialization) */
-        prop.put("nav-generation", theSearch.getNavGeneration());
+        prop.put("show-ranking-buttons", sb.getConfigBool(SwitchboardConstants.SHOW_RANKING_BUTTONS, SwitchboardConstants.SHOW_RANKING_BUTTONS_DEFAULT) ? 1 : 0);
+        prop.put("show-ranking-buttons_nav-generation", theSearch.getNavGeneration());
 
         // compose search navigation
         ContentDomain contentdom = theSearch.getQuery().contentdom;
         prop.put("searchdomswitches",
-            sb.getConfigBool("search.text", true)
+                sb.getConfigBool("search.domswitches", true)
+                 && (sb.getConfigBool("search.text", true)
                 || sb.getConfigBool("search.audio", true)
                 || sb.getConfigBool("search.video", true)
                 || sb.getConfigBool("search.image", true)
-                || sb.getConfigBool("search.app", true) ? 1 : 0);
+                || sb.getConfigBool("search.app", true)) ? 1 : 0);
         prop.put("searchdomswitches_searchtext", sb.getConfigBool("search.text", true) ? 1 : 0);
         prop.put("searchdomswitches_searchaudio", sb.getConfigBool("search.audio", true) ? 1 : 0);
         prop.put("searchdomswitches_searchvideo", sb.getConfigBool("search.video", true) ? 1 : 0);
         prop.put("searchdomswitches_searchimage", sb.getConfigBool("search.image", true) ? 1 : 0);
         prop.put("searchdomswitches_searchapp", sb.getConfigBool("search.app", true) ? 1 : 0);
-        prop.put("searchdomswitches_searchtext_check", (contentdom == ContentDomain.TEXT || contentdom == ContentDomain.ALL) ? "1" : "0");
-        prop.put("searchdomswitches_searchaudio_check", (contentdom == ContentDomain.AUDIO) ? "1" : "0");
-        prop.put("searchdomswitches_searchvideo_check", (contentdom == ContentDomain.VIDEO) ? "1" : "0");
-        prop.put("searchdomswitches_searchimage_check", (contentdom == ContentDomain.IMAGE) ? "1" : "0");
-        prop.put("searchdomswitches_searchapp_check", (contentdom == ContentDomain.APP) ? "1" : "0");
+        prop.put("searchdomswitches_searchtext_check", (contentdom == ContentDomain.TEXT || contentdom == ContentDomain.ALL) ? 1 : 0);
+        prop.put("searchdomswitches_searchaudio_check", (contentdom == ContentDomain.AUDIO) ? 1 : 0);
+        prop.put("searchdomswitches_searchvideo_check", (contentdom == ContentDomain.VIDEO) ? 1 : 0);
+        prop.put("searchdomswitches_searchimage_check", (contentdom == ContentDomain.IMAGE) ? 1 : 0);
+        prop.put("searchdomswitches_searchapp_check", (contentdom == ContentDomain.APP) ? 1 : 0);
         prop.put("searchdomswitches_strictContentDomSwitch", (contentdom != ContentDomain.TEXT && contentdom != ContentDomain.ALL) ? 1 : 0);
         prop.put("searchdomswitches_strictContentDomSwitch_strictContentDom", theSearch.getQuery().isStrictContentDom() ? 1 : 0);
 
@@ -137,27 +138,40 @@ public class yacysearchtrailer {
             int i = 0;
             // first sort the list to a form where the greatest element is in the middle
             LinkedList<Map.Entry<String, Integer>> cloud = new LinkedList<Map.Entry<String, Integer>>();
-            int mincount = Integer.MAX_VALUE; int maxcount = 0;
+            int mincount = Integer.MAX_VALUE;
+            int maxcount = 0;
             while (i < TOPWORDS_MAXCOUNT && navigatorIterator.hasNext()) {
                 name = navigatorIterator.next();
                 count = topicNavigator.get(name);
-                if (count == 0) break;
-                if (name == null) continue;
+                if (count == 0) {
+                    break;
+                }
+                if (name == null) {
+                    continue;
+                }
                 int normcount = (count + TOPWORDS_MAXCOUNT - i) / 2;
-                if (normcount > maxcount) maxcount = normcount;
-                if (normcount < mincount) mincount = normcount;
+                if (normcount > maxcount) {
+                    maxcount = normcount;
+                }
+                if (normcount < mincount) {
+                    mincount = normcount;
+                }
                 Map.Entry<String, Integer> entry = new AbstractMap.SimpleEntry<String, Integer>(name, normcount);
-                if (cloud.size() % 2 == 0) cloud.addFirst(entry); else cloud.addLast(entry); // alternating add entry to first or last position.
+                if (cloud.size() % 2 == 0) {
+                    cloud.addFirst(entry);
+                } else {
+                    cloud.addLast(entry); // alternating add entry to first or last position.
+                }
                 i++;
             }
-            i= 0;
-            for (Map.Entry<String, Integer> entry: cloud) {
+            i = 0;
+            for (final Map.Entry<String, Integer> entry : cloud) {
                 name = entry.getKey();
                 count = entry.getValue();
                 prop.put(fileType, "nav-topics_element_" + i + "_modifier", name);
                 prop.put(fileType, "nav-topics_element_" + i + "_name", name);
-				prop.put(fileType, "nav-topics_element_" + i + "_url", QueryParams
-						.navurl(fileType, 0, theSearch.query, name, false, authenticated).toString());
+                prop.put(fileType, "nav-topics_element_" + i + "_url", QueryParams
+                        .navurl(fileType, 0, theSearch.query, name, false, authenticated).toString());
                 prop.put("nav-topics_element_" + i + "_count", count);
                 int fontsize = TOPWORDS_MINSIZE + (TOPWORDS_MAXSIZE - TOPWORDS_MINSIZE) * (count - mincount) / (1 + maxcount - mincount);
                 fontsize = Math.max(TOPWORDS_MINSIZE, fontsize - (name.length() - 5));
@@ -170,7 +184,7 @@ public class yacysearchtrailer {
             i--;
             prop.put("nav-topics_element_" + i + "_nl", 0);
         }
-        
+
         // protocol navigators
         if (theSearch.protocolNavigator == null || theSearch.protocolNavigator.isEmpty()) {
             prop.put("nav-protocols", 0);
@@ -178,19 +192,24 @@ public class yacysearchtrailer {
             prop.put("nav-protocols", 1);
             //int httpCount = theSearch.protocolNavigator.delete("http");
             //int httpsCount = theSearch.protocolNavigator.delete("https");
-            //theSearch.protocolNavigator.inc("http(s)", httpCount + httpsCount);            
+            //theSearch.protocolNavigator.inc("http(s)", httpCount + httpsCount);
             navigatorIterator = theSearch.protocolNavigator.keys(false);
             int i = 0, pos = 0, neg = 0;
             String nav, rawNav;
             String oldQuery = theSearch.query.getQueryGoal().query_original; // prepare hack to make radio-button like navigation
             String oldProtocolModifier = theSearch.query.modifier.protocol;
-            if (oldProtocolModifier != null && oldProtocolModifier.length() > 0) {theSearch.query.modifier.remove("/" + oldProtocolModifier); theSearch.query.modifier.remove(oldProtocolModifier);}
+            if (oldProtocolModifier != null && oldProtocolModifier.length() > 0) {
+                theSearch.query.modifier.remove("/" + oldProtocolModifier);
+                theSearch.query.modifier.remove(oldProtocolModifier);
+            }
             theSearch.query.modifier.protocol = "";
             theSearch.query.getQueryGoal().query_original = oldQuery.replaceAll(" /https", "").replaceAll(" /http", "").replaceAll(" /ftp", "").replaceAll(" /smb", "").replaceAll(" /file", "");
             while (i < theSearch.getQuery().getStandardFacetsMaxCount() && navigatorIterator.hasNext()) {
                 name = navigatorIterator.next().trim();
                 count = theSearch.protocolNavigator.get(name);
-                if (count == 0) break;
+                if (count == 0) {
+                    break;
+                }
                 nav = "%2F" + name;
                 /* Avoid double percent encoding in QueryParams.navurl */
                 rawNav = "/" + name;
@@ -202,13 +221,12 @@ public class yacysearchtrailer {
                     prop.put(fileType, "nav-protocols_element_" + i + "_modifier", nav);
 					url = QueryParams.navurl(fileType, 0, theSearch.query, rawNav, false, authenticated).toString();
                 } else {
-                    neg++;                    
+                    neg++;
                     prop.put("nav-protocols_element_" + i + "_on", 1);
                     prop.put("nav-protocols_element_" + i + "_onclick", 1);
                     prop.put(fileType, "nav-protocols_element_" + i + "_modifier", "-" + nav);
 					url = QueryParams
-							.navUrlWithSingleModifierRemoved(fileType, 0, theSearch.query, rawNav, authenticated)
-							.toString();
+							.navUrlWithSingleModifierRemoved(fileType, 0, theSearch.query, rawNav, authenticated);
                 }
                 prop.put(fileType, "nav-protocols_element_" + i + "_name", name);
                 prop.put("nav-protocols_element_" + i + "_onclick_url", url);
@@ -217,15 +235,21 @@ public class yacysearchtrailer {
                 prop.put("nav-protocols_element_" + i + "_nl", 1);
                 i++;
             }
-            if (i == 1) prop.put("nav-protocols_element_0_onclick", 0); // allow to unselect, if only one button
+            if (i == 1) {
+                prop.put("nav-protocols_element_0_onclick", 0); // allow to unselect, if only one button
+            }
             theSearch.query.modifier.protocol = oldProtocolModifier;
-            if (oldProtocolModifier != null && oldProtocolModifier.length() > 0) theSearch.query.modifier.add(oldProtocolModifier.startsWith("/") ? oldProtocolModifier : "/" + oldProtocolModifier);
+            if (oldProtocolModifier != null && oldProtocolModifier.length() > 0) {
+                theSearch.query.modifier.add(oldProtocolModifier.startsWith("/") ? oldProtocolModifier : "/" + oldProtocolModifier);
+            }
             theSearch.query.getQueryGoal().query_original = oldQuery;
             prop.put("nav-protocols_element", i);
             prop.put("nav-protocols_count", i);
             i--;
             prop.put("nav-protocols_element_" + i + "_nl", 0);
-            if (pos == 1 && neg == 0) prop.put("nav-protocols", 0); // this navigation is not useful
+            if (pos == 1 && neg == 0) {
+                prop.put("nav-protocols", 0); // this navigation is not useful
+            }
         }
 
         // date navigators
@@ -237,21 +261,31 @@ public class yacysearchtrailer {
             int i = 0, pos = 0, neg = 0;
             long dx = -1;
             Date fromconstraint = theSearch.getQuery().modifier.from == null ? null : DateDetection.parseLine(theSearch.getQuery().modifier.from, theSearch.getQuery().timezoneOffset);
-            if (fromconstraint == null) fromconstraint = new Date(System.currentTimeMillis() - AbstractFormatter.normalyearMillis);
+            if (fromconstraint == null) {
+                fromconstraint = new Date(System.currentTimeMillis() - AbstractFormatter.normalyearMillis);
+            }
             Date toconstraint = theSearch.getQuery().modifier.to == null ? null : DateDetection.parseLine(theSearch.getQuery().modifier.to, theSearch.getQuery().timezoneOffset);
-            if (toconstraint == null) toconstraint = new Date(System.currentTimeMillis() + AbstractFormatter.normalyearMillis);
+            if (toconstraint == null) {
+                toconstraint = new Date(System.currentTimeMillis() + AbstractFormatter.normalyearMillis);
+            }
             while (i < theSearch.getQuery().getDateFacetMaxCount() && navigatorIterator.hasNext()) {
                 name = navigatorIterator.next().trim();
-                if (name.length() < 10) continue;
+                if (name.length() < 10) {
+                    continue;
+                }
                 count = theSearch.dateNavigator.get(name);
-                if(count == 0) {
-                	continue;
+                if (count == 0) {
+                    continue;
                 }
                 String shortname = name.substring(0, 10);
                 long d = Instant.parse(name).toEpochMilli();
                 Date dd = new Date(d);
-                if (fromconstraint != null && dd.before(fromconstraint)) continue;
-                if (toconstraint != null && dd.after(toconstraint)) break;
+                if (fromconstraint != null && dd.before(fromconstraint)) {
+                    continue;
+                }
+                if (toconstraint != null && dd.after(toconstraint)) {
+                    break;
+                }
                 if (dx > 0) {
                     while (d - dx > AbstractFormatter.dayMillis && i < theSearch.getQuery().getDateFacetMaxCount()) {
                         dx += AbstractFormatter.dayMillis;
@@ -264,11 +298,11 @@ public class yacysearchtrailer {
                     }
                 }
                 dx = d;
-                if (theSearch.query.modifier.on == null || !theSearch.query.modifier.on.contains(shortname) ) {
+                if (theSearch.query.modifier.on == null || !theSearch.query.modifier.on.contains(shortname)) {
                     pos++;
                     prop.put("nav-dates_element_" + i + "_on", 1);
                 } else {
-                    neg++;                    
+                    neg++;
                     prop.put("nav-dates_element_" + i + "_on", 0);
                 }
                 prop.put(fileType, "nav-dates_element_" + i + "_name", shortname);
@@ -280,14 +314,17 @@ public class yacysearchtrailer {
             prop.put("nav-dates_count", i);
             i--;
             prop.put("nav-dates_element_" + i + "_nl", 0);
-            if (pos == 1 && neg == 0) prop.put("nav-dates", 0); // this navigation is not useful
+            if (pos == 1 && neg == 0) {
+                prop.put("nav-dates", 0); // this navigation is not useful
+            }
         }
 
         // vocabulary navigators
         final Map<String, ScoreMap<String>> vocabularyNavigators = theSearch.vocabularyNavigator;
         if (vocabularyNavigators != null && !vocabularyNavigators.isEmpty()) {
             int navvoccount = 0;
-            vocnav: for (Map.Entry<String, ScoreMap<String>> ve: vocabularyNavigators.entrySet()) {
+            vocnav:
+            for (final Map.Entry<String, ScoreMap<String>> ve : vocabularyNavigators.entrySet()) {
                 String navname = ve.getKey();
                 if (ve.getValue() == null || ve.getValue().isEmpty()) {
                     continue vocnav;
@@ -299,7 +336,9 @@ public class yacysearchtrailer {
                 while (i < 20 && navigatorIterator.hasNext()) {
                     name = navigatorIterator.next();
                     count = ve.getValue().get(name);
-                    if (count == 0) break;
+                    if (count == 0) {
+                        break;
+                    }
                     nav = "%2Fvocabulary%2F" + navname + "%2F" + MultiProtocolURL.escape(Tagging.encodePrintname(name)).toString();
                     /* Avoid double percent encoding in QueryParams.navurl */
                     rawNav = "/vocabulary/" + navname + "/" + MultiProtocolURL.escape(Tagging.encodePrintname(name)).toString();
@@ -333,8 +372,8 @@ public class yacysearchtrailer {
 
         // navigator plugins
         int ni = 0;
-        for (String naviname : theSearch.navigatorPlugins.keySet()) {
 
+        for (final String naviname : theSearch.navigatorPlugins.keySet()) {
             Navigator navi = theSearch.navigatorPlugins.get(naviname);
             if (navi.isEmpty()) {
                 continue;

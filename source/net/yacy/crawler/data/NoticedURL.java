@@ -34,7 +34,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import net.yacy.cora.order.Base64Order;
 import net.yacy.cora.storage.HandleSet;
 import net.yacy.cora.util.ConcurrentLog;
@@ -72,7 +71,7 @@ public class NoticedURL {
         this.limitStack = new HostBalancer(new File(cachePath, "CrawlerLimitStacks"), onDemandLimit, exceed134217727);
 
         this.remoteStack = null; // init on demand (on first push)
-        
+
         ConcurrentLog.info("NoticedURL", "opening CrawlerNoLoadStacks..");
         this.noloadStack = new HostBalancer(new File(cachePath, "CrawlerNoLoadStacks"), onDemandLimit, exceed134217727);
         ConcurrentLog.info("NoticedURL", "FINISHED CREATING STACKS at " + cachePath.toString());
@@ -90,10 +89,18 @@ public class NoticedURL {
 
     public void clear() {
     	ConcurrentLog.info("NoticedURL", "CLEARING ALL STACKS");
-    	if (this.coreStack != null) this.coreStack.clear();
-    	if (this.limitStack != null) this.limitStack.clear();
-    	if (this.remoteStack != null) this.remoteStack.clear();
-    	if (this.noloadStack != null) this.noloadStack.clear();
+    	if (this.coreStack != null) {
+            this.coreStack.clear();
+        }
+    	if (this.limitStack != null) {
+            this.limitStack.clear();
+        }
+    	if (this.remoteStack != null) {
+            this.remoteStack.clear();
+        }
+    	if (this.noloadStack != null) {
+            this.noloadStack.clear();
+        }
     }
 
     protected void close() {
@@ -121,7 +128,7 @@ public class NoticedURL {
     protected void finalize() throws Throwable {
         if ((this.coreStack != null) || (this.limitStack != null) || (this.remoteStack != null)) {
             ConcurrentLog.warn("plasmaCrawlNURL", "NURL stack closed by finalizer");
-            close();
+            this.close();
         }
         super.finalize();
     }
@@ -131,16 +138,26 @@ public class NoticedURL {
     }
 
     public boolean isEmptyLocal() {
-        if (this.coreStack == null) return true;
-        if (!this.coreStack.isEmpty()) return false;
-        if (!this.limitStack.isEmpty()) return false;
-        if (!this.noloadStack.isEmpty()) return false;
+        if (this.coreStack == null) {
+            return true;
+        } else if (!this.coreStack.isEmpty()) {
+            return false;
+        } else if (!this.limitStack.isEmpty()) {
+            return false;
+        } else if (!this.noloadStack.isEmpty()) {
+            return false;
+        }
+
         return true;
     }
-    
+
     public boolean isEmpty() {
-        if (!isEmptyLocal()) return false;
-        if (this.remoteStack != null && !this.remoteStack.isEmpty()) return false;
+        if (!this.isEmptyLocal()) {
+            return false;
+        } else if (this.remoteStack != null && !this.remoteStack.isEmpty()) {
+            return false;
+        }
+
         return true;
     }
 
@@ -153,7 +170,7 @@ public class NoticedURL {
             default: return true;
         }
     }
-    
+
     public int stackSize(final StackType stackType) {
         switch (stackType) {
             case NOLOAD:    return (this.noloadStack == null) ? 0 : this.noloadStack.size();
@@ -176,9 +193,11 @@ public class NoticedURL {
      * push a crawl request on one of the different crawl stacks
      * @param stackType
      * @param entry
+     * @param profile
+     * @param robots
      * @return null if this was successful or a String explaining what went wrong in case of an error
      */
-    public String push(final StackType stackType, final Request entry, CrawlProfile profile, final RobotsTxt robots) {
+    public String push(final StackType stackType, final Request entry, final CrawlProfile profile, final RobotsTxt robots) {
         try {
             switch (stackType) {
                 case LOCAL:  return this.coreStack.push(entry, profile, robots);
@@ -192,18 +211,43 @@ public class NoticedURL {
                 case NOLOAD: return this.noloadStack.push(entry, profile, robots);
                 default:     return "stack type unknown";
             }
-        } catch (final Exception er) {
-            ConcurrentLog.logException(er);
-            return "error pushing onto the crawl stack: " + er.getMessage();
+        } catch (final IOException | SpaceExceededException e) {
+            ConcurrentLog.logException(e);
+            return "error pushing onto the crawl stack: " + e.getMessage();
         }
     }
 
     protected Request get(final byte[] urlhash) {
         Request entry = null;
-        try {if ((entry = this.noloadStack.get(urlhash)) != null) return entry;} catch (final IOException e) {}
-        try {if ((entry = this.coreStack.get(urlhash)) != null) return entry;} catch (final IOException e) {}
-        try {if ((entry = this.limitStack.get(urlhash)) != null) return entry;} catch (final IOException e) {}
-        try {if (this.remoteStack != null && (entry = this.remoteStack.get(urlhash)) != null) return entry;} catch (final IOException e) {}
+
+        try {
+            if ((entry = this.noloadStack.get(urlhash)) != null) {
+            return entry;
+        }
+        } catch (final IOException e) {
+        }
+
+        try {
+            if ((entry = this.coreStack.get(urlhash)) != null) {
+            return entry;
+        }
+        } catch (final IOException e) {
+        }
+
+        try {
+            if ((entry = this.limitStack.get(urlhash)) != null) {
+            return entry;
+        }
+        } catch (final IOException e) {
+        }
+
+        try {
+            if (this.remoteStack != null && (entry = this.remoteStack.get(urlhash)) != null) {
+            return entry;
+        }
+        } catch (final IOException e) {
+        }
+
         return null;
     }
 
@@ -336,15 +380,15 @@ public class NoticedURL {
             // it may be possible that another process has taken all
             s = balancer.size(); // this time read the size to find errors
             if (s == 0) return null; // the balancer is actually empty!
-            
+
             // if the balancer is not empty, try again
             entry = balancer.pop(delay, cs, robots);
             if (entry != null) return entry;
-            
+
             if (s > balancer.size()) continue; // the balancer has shrinked, thats good, it will terminate
             errors++; // bad, if the size does not shrink we are in danger to not terminate
             if (errors < 100) continue; // there is the possibility that it is not a bug but concurrency, so just ignore it for some time
-                
+
             // at this point we consider the balancer to be broken
             final int aftersize = balancer.size(); // get the amount of data that we loose
             balancer.clear(); // the balancer is broken and cannot shrink
