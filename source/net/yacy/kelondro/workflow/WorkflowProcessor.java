@@ -21,26 +21,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
 package net.yacy.kelondro.workflow;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import net.yacy.cora.util.ConcurrentLog;
 import net.yacy.kelondro.util.NamePrefixThreadFactory;
-
 
 public class WorkflowProcessor<J extends WorkflowJob> {
 
     public static final int availableCPU = Runtime.getRuntime().availableProcessors();
-    private static final ArrayList<WorkflowProcessor<?>> processMonitor = new ArrayList<WorkflowProcessor<?>>();
+    private static final List<WorkflowProcessor<?>> processMonitor = new ArrayList<>();
 
     private ExecutorService executor;
     private AtomicInteger executorRunning;
@@ -64,7 +62,7 @@ public class WorkflowProcessor<J extends WorkflowJob> {
         this.task = task;
         this.childs = childnames;
         this.maxpoolsize = maxpoolsize;
-        this.input = new LinkedBlockingQueue<J>(Math.max(maxpoolsize + 1, inputQueueSize));
+        this.input = new LinkedBlockingQueue<>(Math.max(maxpoolsize + 1, inputQueueSize));
         this.output = output;
         this.executor = Executors.newCachedThreadPool(new NamePrefixThreadFactory(name));
         this.executorRunning = new AtomicInteger(0);
@@ -73,7 +71,7 @@ public class WorkflowProcessor<J extends WorkflowJob> {
             this.executor.submit(new InstantBlockingThread<J>(this));
             this.executorRunning++;
         }
-        */
+         */
         // init statistics
         this.blockTime = 0;
         this.execTime = 0;
@@ -85,11 +83,13 @@ public class WorkflowProcessor<J extends WorkflowJob> {
     }
 
     public WorkflowTask<J> getTask() {
-		return this.task;
-	}
-    
+        return this.task;
+    }
+
     public int getQueueSize() {
-        if (this.input == null) return 0;
+        if (this.input == null) {
+            return 0;
+        }
         return this.input.size();
     }
 
@@ -98,20 +98,23 @@ public class WorkflowProcessor<J extends WorkflowJob> {
     }
 
     public int getMaxQueueSize() {
-        if (this.input == null) return 0;
+        if (this.input == null) {
+            return 0;
+        }
         return this.input.size() + this.input.remainingCapacity();
     }
 
     public int getMaxConcurrency() {
         return this.maxpoolsize;
     }
-    
+
     public int getExecutors() {
         return this.executorRunning.get();
     }
-    
+
     /**
-     * the decExecutors method may only be called within the AbstractBlockingThread while loop!!
+     * the decExecutors method may only be called within the
+     * AbstractBlockingThread while loop!!
      */
     public void decExecutors() {
         this.executorRunning.decrementAndGet();
@@ -152,7 +155,7 @@ public class WorkflowProcessor<J extends WorkflowJob> {
         if (this.input.remainingCapacity() > 1000) {
             return;
         }
-        final BlockingQueue<J> i = new LinkedBlockingQueue<J>();
+        final BlockingQueue<J> i = new LinkedBlockingQueue<>();
         J e;
         while (!this.input.isEmpty()) {
             e = this.input.poll();
@@ -174,24 +177,29 @@ public class WorkflowProcessor<J extends WorkflowJob> {
                 if (out != null && this.output != null) {
                     this.output.enQueue(out);
                 }
-            } catch (final Throwable e) {
+            } catch (final Exception e) {
                 ConcurrentLog.logException(e);
             }
             return;
-        }        
+        }
         // execute concurrent in thread
         while (this.input != null) {
             try {
                 this.input.put(in);
-                if (this.input.size() > this.executorRunning.get() && this.executorRunning.get() < this.maxpoolsize) synchronized (executor) {
-                    if (this.input.size() > this.executorRunning.get() && this.executorRunning.get() < this.maxpoolsize) {
-                        this.executorRunning.incrementAndGet();
-                        this.executor.submit(new InstantBlockingThread<J>(this));
+                if (this.input.size() > this.executorRunning.get() && this.executorRunning.get() < this.maxpoolsize) {
+                    synchronized (executor) {
+                        if (this.input.size() > this.executorRunning.get() && this.executorRunning.get() < this.maxpoolsize) {
+                            this.executorRunning.incrementAndGet();
+                            this.executor.submit(new InstantBlockingThread<>(this));
+                        }
                     }
                 }
                 break;
             } catch (final Throwable e) {
-                try {Thread.sleep(10);} catch (final InterruptedException ee) {}
+                try {
+                    Thread.sleep(10);
+                } catch (final InterruptedException ee) {
+                }
             }
         }
     }
@@ -212,14 +220,20 @@ public class WorkflowProcessor<J extends WorkflowJob> {
                 ConcurrentLog.info("serverProcessor", "putting poison pill in queue " + this.processName + ", thread " + i);
                 this.input.put((J) WorkflowJob.poisonPill); // put a poison pill into the queue which will kill the job
                 ConcurrentLog.info("serverProcessor", ".. poison pill is in queue " + this.processName + ", thread " + i + ". awaiting termination");
-            } catch (final InterruptedException e) { }
+            } catch (final InterruptedException e) {
+            }
         }
 
         // wait until input queue is empty
         for (int i = 0; i < 10; i++) {
-            if (this.input.size() <= 0) break;
+            if (this.input.size() <= 0) {
+                break;
+            }
             ConcurrentLog.info("WorkflowProcess", "waiting for queue " + this.processName + " to shut down; input.size = " + this.input.size());
-            try {Thread.sleep(1000);} catch (final InterruptedException e) {}
+            try {
+                Thread.sleep(1000);
+            } catch (final InterruptedException e) {
+            }
         }
         this.executorRunning.set(0);
 
@@ -230,9 +244,12 @@ public class WorkflowProcessor<J extends WorkflowJob> {
                 this.executor.shutdown();
                 for (int i = 0; i < 60; i++) {
                     this.executor.awaitTermination(1, TimeUnit.SECONDS);
-                    if (this.input.size() <= 0) break;
+                    if (this.input.size() <= 0) {
+                        break;
+                    }
                 }
-            } catch (final InterruptedException e) {}
+            } catch (final InterruptedException e) {
+            }
         }
         ConcurrentLog.info("serverProcessor", "queue " + this.processName + ": shutdown.");
         this.executor = null;
@@ -277,6 +294,7 @@ public class WorkflowProcessor<J extends WorkflowJob> {
 
     /**
      * the block time is the time that a take() blocks until it gets a value
+     *
      * @return
      */
     public long getBlockTime() {
@@ -284,19 +302,24 @@ public class WorkflowProcessor<J extends WorkflowJob> {
     }
 
     /**
-     * the exec time is the complete time of the execution and processing of the value from take()
+     * the exec time is the complete time of the execution and processing of the
+     * value from take()
+     *
      * @return
      */
     public long getExecTime() {
         return this.execTime;
     }
+
     public long getExecCount() {
         return this.execCount;
     }
 
     /**
-     * the passOn time is the time that a put() takes to enqueue a result value to the next queue
-     * in case that the target queue is limited and may be full, this value may increase
+     * the passOn time is the time that a put() takes to enqueue a result value
+     * to the next queue in case that the target queue is limited and may be
+     * full, this value may increase
+     *
      * @return
      */
     public long getPassOnTime() {
